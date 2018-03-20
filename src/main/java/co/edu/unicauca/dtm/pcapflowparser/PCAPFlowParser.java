@@ -42,8 +42,9 @@ public class PCAPFlowParser {
 		String pcapPath = "/pcap/";
 		String outPath = "/out/";
 		// Define default timeouts in seconds
-		String sFlowTimeout = "120";
-		String sActivityTimeout = "10";
+		String sFlowTimeout = "60";
+		String sActivityTimeout = "5";
+		String sInitialPackets = "10";
 		// Get arguments
 		switch (args.length) {
 		case 1:
@@ -63,6 +64,13 @@ public class PCAPFlowParser {
 			outPath = args[1];
 			sFlowTimeout = args[2];
 			sActivityTimeout = args[3];
+			break;
+		case 5:
+			pcapPath = args[0];
+			outPath = args[1];
+			sFlowTimeout = args[2];
+			sActivityTimeout = args[3];
+			sInitialPackets = args[4];
 			break;
 		}
 		// Check if PCAP path exists and is a directory
@@ -90,7 +98,7 @@ public class PCAPFlowParser {
 		try {
 			flowTimeout = Integer.parseInt(sFlowTimeout);
 		} catch (Exception e) {
-			flowTimeout = 120;
+			flowTimeout = 60;
 			System.err.println(
 					"Error parsing flow timeout = " + sFlowTimeout + " to integer; using default value " + flowTimeout);
 		}
@@ -99,16 +107,25 @@ public class PCAPFlowParser {
 		try {
 			activityTimeout = Integer.parseInt(sActivityTimeout);
 		} catch (Exception e) {
-			activityTimeout = 10;
+			activityTimeout = 5;
 			System.err.println("Error parsing activity timeout = " + sActivityTimeout
 					+ " to integer; using default value " + activityTimeout);
 		}
+		// Parse initial packets to integer
+		int initialPackets;
+		try {
+			initialPackets = Integer.parseInt(sInitialPackets);
+		} catch (Exception e) {
+			initialPackets = 10;
+			System.err.println("Error parsing initial packets = " + sActivityTimeout
+					+ " to integer; using default value " + initialPackets);
+		}
 		// Run PCAPFlowParser
 		PCAPFlowParser parser = new PCAPFlowParser();
-		parser.parsePCAP(pcapDir, outDir, flowTimeout, activityTimeout);
+		parser.parsePCAP(pcapDir, outDir, flowTimeout, activityTimeout, initialPackets);
 	}
 
-	private void parsePCAP(File pcapDir, File outDir, int flowTimeout, int activityTimeout) {
+	private void parsePCAP(File pcapDir, File outDir, int flowTimeout, int activityTimeout, int initialPackets) {
 		long start = System.currentTimeMillis();
 		// Get the list of files in the PCAP directory
 		int nFiles = pcapDir.list().length;
