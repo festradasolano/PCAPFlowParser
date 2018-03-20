@@ -18,8 +18,10 @@ package co.edu.unicauca.dtm.pcapflowparser;
 
 import java.io.File;
 
+import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
+
 /**
- * Description
+ * 
  * 
  * Copyright 2018 Felipe Estrada-Solano <festradasolano at gmail>
  * 
@@ -111,10 +113,26 @@ public class PCAPFlowParser {
 		int nFiles = pcapDir.list().length;
 		System.out.println("Found " + nFiles + " files in " + pcapDir.getAbsolutePath());
 		//
+		int nParsedFiles = 0;
+		int nErrorFiles = 0;
+		for (File pcapFile : pcapDir.listFiles()) {
+			System.out.println("Parsing file: " + pcapFile.getName());
+			// Read and check PCAP file
+			PacketManager packetMgr = new PacketManager();
+			if (!packetMgr.config(pcapFile.getAbsolutePath())) {
+				System.err.println("Error while opening file: " + pcapFile.getName());
+				nErrorFiles++;
+			} else {
+				nParsedFiles++;
+			}
+		}
 		long end = System.currentTimeMillis();
+		// Report statistics
 		System.out.println("Done! in " + ((end - start) / 1000.0) + " seconds.");
 		System.out.println("PCAP files");
-		System.out.println("\tTotal files: " + nFiles);
+		System.out.println(" - Total = " + nFiles);
+		System.out.println(" - Parse = " + nParsedFiles);
+		System.out.println(" - Error = " + nErrorFiles);
 	}
 
 }
