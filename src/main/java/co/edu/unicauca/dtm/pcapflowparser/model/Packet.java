@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package co.edu.unicauca.dtm.pcapflowparser.persistence;
+package co.edu.unicauca.dtm.pcapflowparser.model;
 
 import org.jnetpcap.packet.format.FormatUtils;
 

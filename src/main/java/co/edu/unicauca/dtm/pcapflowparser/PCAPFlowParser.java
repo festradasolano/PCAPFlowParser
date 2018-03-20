@@ -19,7 +19,7 @@ package co.edu.unicauca.dtm.pcapflowparser;
 import java.io.File;
 
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
-import co.edu.unicauca.dtm.pcapflowparser.persistence.Packet;
+import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
 
 /**
  * 
@@ -114,25 +114,36 @@ public class PCAPFlowParser {
 		int nFiles = pcapDir.list().length;
 		System.out.println("Found " + nFiles + " files in " + pcapDir.getAbsolutePath());
 		//
-		int nParsedFiles = 0;
+		int nValidFiles = 0;
 		int nErrorFiles = 0;
+		int nPackets = 0;
+		int nValidPackets = 0;
+		int nErrorPackets = 0;
 		for (File pcapFile : pcapDir.listFiles()) {
 			System.out.println("Parsing file: " + pcapFile.getName());
 			// Read and check PCAP file
 			PacketManager packetMgr = new PacketManager();
 			if (!packetMgr.config(pcapFile.getAbsolutePath())) {
-				System.err.println("Error while opening file: " + pcapFile.getName());
 				nErrorFiles++;
+				System.err.println("Error while opening file: " + pcapFile.getName());
 			} else {
+				nValidFiles++;
 //				while(true) {
 				for (int i = 0; i < 2; i++) {
-					System.out.println("****");
+					nPackets++;
 					Packet packet = packetMgr.nextPacket();
 					if (packet == null) {
-						break;
+						nErrorPackets++;
+					} else {
+						// Check end of file
+						if (packet.getTimestamp() == -1) {
+							System.out.println("End of file: " + pcapFile.getName());
+							break;
+						}
+						nValidPackets++;
 					}
+					
 				}
-				nParsedFiles++;
 			}
 		}
 		long end = System.currentTimeMillis();
@@ -140,8 +151,12 @@ public class PCAPFlowParser {
 		System.out.println("Done! in " + ((end - start) / 1000.0) + " seconds.");
 		System.out.println("PCAP files");
 		System.out.println(" - Total = " + nFiles);
-		System.out.println(" - Parse = " + nParsedFiles);
+		System.out.println(" - Valid = " + nValidFiles);
 		System.out.println(" - Error = " + nErrorFiles);
+		System.out.println("Packets");
+		System.out.println(" - Total = " + nPackets);
+		System.out.println(" - Valid = " + nValidPackets);
+		System.out.println(" - Error = " + nErrorPackets);
 	}
 
 }

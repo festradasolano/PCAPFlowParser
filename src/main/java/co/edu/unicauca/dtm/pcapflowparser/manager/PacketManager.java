@@ -17,10 +17,8 @@
 package co.edu.unicauca.dtm.pcapflowparser.manager;
 
 import org.jnetpcap.Pcap;
-import org.jnetpcap.PcapClosedException;
 import org.jnetpcap.nio.JMemory;
 import org.jnetpcap.packet.PcapPacket;
-import org.jnetpcap.packet.format.FormatUtils;
 import org.jnetpcap.protocol.lan.Ethernet;
 import org.jnetpcap.protocol.lan.IEEE802dot1q;
 import org.jnetpcap.protocol.network.Ip4;
@@ -28,7 +26,7 @@ import org.jnetpcap.protocol.network.Ip6;
 import org.jnetpcap.protocol.tcpip.Tcp;
 import org.jnetpcap.protocol.tcpip.Udp;
 
-import co.edu.unicauca.dtm.pcapflowparser.persistence.Packet;
+import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
 
 /**
  * 
@@ -69,7 +67,8 @@ public class PacketManager {
 		try {
 			Packet packet = new Packet();
 			// Read next available packet from libpcap
-			if (pcapReader.nextEx(readPacket) == Pcap.NEXT_EX_OK) {
+			int readStatus = pcapReader.nextEx(readPacket);
+			if (readStatus == Pcap.NEXT_EX_OK) {
 				PcapPacket pcapPacket = new PcapPacket(readPacket);
 				// Timestamp and length
 				packet.setTimestamp(pcapPacket.getCaptureHeader().timestampInMicros());
@@ -113,14 +112,14 @@ public class PacketManager {
 					packet.setPortDst(udp.destination());
 				}
 				return packet;
+			} else if (readStatus == Pcap.NEXT_EX_EOF) {
+				// End of file
+				packet.setTimestamp(-1);
+				return packet;
 			} else {
-				System.out.println("Read all packets from the current file!");
 				return null;
 			}
-		} catch (PcapClosedException e) {
-			System.out.println("Read all packets from the current file!");
-			return null;
-		} catch (Exception ex) {
+		}catch (Exception ex) {
 			ex.printStackTrace();
 			return null;
 		}
