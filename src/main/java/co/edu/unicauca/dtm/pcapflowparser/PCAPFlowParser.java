@@ -19,6 +19,7 @@ package co.edu.unicauca.dtm.pcapflowparser;
 import java.io.File;
 
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
+import co.edu.unicauca.dtm.pcapflowparser.persistence.Packet;
 
 /**
  * 
@@ -123,6 +124,14 @@ public class PCAPFlowParser {
 				System.err.println("Error while opening file: " + pcapFile.getName());
 				nErrorFiles++;
 			} else {
+//				while(true) {
+				for (int i = 0; i < 2; i++) {
+					System.out.println("****");
+					Packet packet = packetMgr.nextPacket();
+					if (packet == null) {
+						break;
+					}
+				}
 				nParsedFiles++;
 			}
 		}
