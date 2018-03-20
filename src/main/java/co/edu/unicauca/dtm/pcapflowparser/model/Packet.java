@@ -136,7 +136,7 @@ public class Packet {
 	public byte[] getEthSrc() {
 		return ethSrc;
 	}
-
+	
 	/**
 	 * @param ethSrc the ethSrc to set
 	 */
