@@ -70,9 +70,9 @@ public class PacketManager {
 			int readStatus = pcapReader.nextEx(readPacket);
 			if (readStatus == Pcap.NEXT_EX_OK) {
 				PcapPacket pcapPacket = new PcapPacket(readPacket);
-				// Timestamp and length
+				// Timestamp and size
 				packet.setTimestamp(pcapPacket.getCaptureHeader().timestampInMicros());
-				packet.setLength(pcapPacket.getPacketWirelen());
+				packet.setSize(pcapPacket.getPacketWirelen());
 				// Ethernet
 				Ethernet eth = new Ethernet();
 				if (pcapPacket.hasHeader(eth)) {

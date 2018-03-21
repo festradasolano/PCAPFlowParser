@@ -46,9 +46,9 @@ public class Flow {
 	private long lastSeen;
 
 	/**
-	 * Total length in bytes
+	 * Total size in bytes
 	 */
-	private long totalLength;
+	private long totalSize;
 	
 	/**
 	 * Maximum idle time
@@ -56,14 +56,14 @@ public class Flow {
 	private long maxIdleTime;
 	
 	/**
-	 * Lengths in bytes of the first N packets
+	 * Size in bytes of the first N packets
 	 */
-	private List<Integer> packetLengths;
+	private List<Integer> nFirstPacketSizes;
 	
 	/**
-	 * Inter-arrival times in microseconds of the first N packets
+	 * Inter-arrival time in microseconds of the first N packets
 	 */
-	private List<Long> packetIATs;
+	private List<Long> nFirstPacketIATs;
 	
 	/**
 	 * 
@@ -80,12 +80,12 @@ public class Flow {
 		this.firstPacket = firstPacket;
 		startTime = firstPacket.getTimestamp();
 		lastSeen = firstPacket.getTimestamp();
-		totalLength = (long) firstPacket.getLength();
+		totalSize = (long) firstPacket.getSize();
 		maxIdleTime = firstPacket.getTimestamp() - lastSeen;
-		packetLengths = new ArrayList<Integer>();
-		packetLengths.add(firstPacket.getLength());
-		packetIATs = new ArrayList<Long>();
-		packetIATs.add(firstPacket.getTimestamp() - lastSeen);
+		nFirstPacketSizes = new ArrayList<Integer>();
+		nFirstPacketSizes.add(firstPacket.getSize());
+		nFirstPacketIATs = new ArrayList<Long>();
+		nFirstPacketIATs.add(firstPacket.getTimestamp() - lastSeen);
 	}
 
 	/**
@@ -131,24 +131,24 @@ public class Flow {
 	}
 
 	/**
-	 * @return the totalLength
+	 * @return the totalSize
 	 */
-	public long getTotalLength() {
-		return totalLength;
+	public long getTotalSize() {
+		return totalSize;
 	}
 
 	/**
-	 * @param totalLength the totalLength to set
+	 * @param totalSize the totalSize to set
 	 */
-	public void setTotalLength(long totalLength) {
-		this.totalLength = totalLength;
+	public void setTotalSize(long totalSize) {
+		this.totalSize = totalSize;
 	}
 	
 	/**
-	 * @param packetLength
+	 * @param packetSize
 	 */
-	public void sumUpPacketLength(int packetLength) {
-		totalLength = totalLength + packetLength;
+	public void sumUpPacketSize(int packetSize) {
+		totalSize = totalSize + packetSize;
 	}
 
 	/**
@@ -175,45 +175,56 @@ public class Flow {
 	}
 
 	/**
-	 * @return the packetLengths
+	 * @return the nFirstPacketSizes
 	 */
-	public List<Integer> getPacketLengths() {
-		return packetLengths;
-	}
-
-	/**
-	 * @param packetLengths the packetLengths to set
-	 */
-	public void setPacketLengths(List<Integer> packetLengths) {
-		this.packetLengths = packetLengths;
+	public List<Integer> getNFirstPacketSizes() {
+		return nFirstPacketSizes;
 	}
 	
 	/**
-	 * @param packetLength
+	 * @param nFirstPacketSizes the nFirstPacketSizes to set
 	 */
-	public void addPacketLength(int packetLength) {
-		packetLengths.add(packetLength);
+	public void setNFirstPacketSizes(List<Integer> nFirstPacketSizes) {
+		this.nFirstPacketSizes = nFirstPacketSizes;
+	}
+	
+	/**
+	 * @param packetSize
+	 */
+	public void addPacketSize(int packetSize) {
+		nFirstPacketSizes.add(packetSize);
 	}
 
 	/**
 	 * @return the packetIATs
 	 */
-	public List<Long> getPacketIATs() {
-		return packetIATs;
+	public List<Long> getNFirstPacketIATs() {
+		return nFirstPacketIATs;
 	}
 
 	/**
 	 * @param packetIATs the packetIATs to set
 	 */
-	public void setPacketIATs(List<Long> packetIATs) {
-		this.packetIATs = packetIATs;
+	public void setNFirstPacketIATs(List<Long> nFirstPacketIATs) {
+		this.nFirstPacketIATs = nFirstPacketIATs;
 	}
 	
 	/**
 	 * @param packetTimestamp
 	 */
 	public void addPacketIAT(long iat) {
-		packetIATs.add(iat);
+		nFirstPacketIATs.add(iat);
+	}
+	
+	/**
+	 * @return
+	 */
+	public int getNFirstPacketsAdded() {
+		if (nFirstPacketSizes.size() >= nFirstPacketIATs.size()) {
+			return nFirstPacketSizes.size();
+		} else {
+			return nFirstPacketIATs.size();
+		}
 	}
 
 }

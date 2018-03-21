@@ -45,9 +45,9 @@ public class Packet {
 	private long timestamp;
 
 	/**
-	 * Length on wire in bytes
+	 * Size in bytes
 	 */
-	private int length;
+	private int size;
 
 	/**
 	 * Ethernet source address
@@ -100,7 +100,7 @@ public class Packet {
 	public Packet() {
 		super();
 		timestamp = 0;
-		length = 0;
+		size = 0;
 		ethSrc = Packet.ETH_UNKNOWN;
 		ethDst = Packet.ETH_UNKNOWN;
 		ethType = 0;
@@ -128,18 +128,18 @@ public class Packet {
 	}
 
 	/**
-	 * @return the length on wire in bytes
+	 * @return the size in bytes
 	 */
-	public int getLength() {
-		return length;
+	public int getSize() {
+		return size;
 	}
 
 	/**
-	 * @param length
-	 *            the length on wire in bytes to set
+	 * @param size
+	 *            the size in bytes to set
 	 */
-	public void setLength(int length) {
-		this.length = length;
+	public void setSize(int size) {
+		this.size = size;
 	}
 
 	/**
