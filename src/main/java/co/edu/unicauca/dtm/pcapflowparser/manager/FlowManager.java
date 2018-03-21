@@ -35,43 +35,105 @@ public class FlowManager {
 	/**
 	 * 
 	 */
+	long flowIdleTimeout;
+
+	/**
+	 * 
+	 */
+	int nFirstPackets;
+	
+	/**
+	 * 
+	 */
 	private HashMap<String, Flow> flows;
 
 	/**
 	 * 
 	 */
-	long flowTimeout;
-
+	long lastDumpTimestamp;
+	
 	/**
 	 * 
 	 */
-	long activityTimeout;
-
-	/**
-	 * 
-	 */
-	int initialPackets;
+	long flowCounter;
 
 	/**
 	 * @param flowTimeout
 	 *            flow timeout in seconds
 	 * @param activityTimeout
 	 *            activity timeout in seconds
-	 * @param initialPackets
+	 * @param nFirstPackets
 	 *            number of packets at the beginning of a flow for processing
 	 *            features
 	 */
-	public FlowManager(int flowTimeout, int activityTimeout, int initialPackets) {
+	public FlowManager(int flowIdleTimeout, int activityTimeout, int nFirstPackets) {
 		super();
 		long secToMicrosec = 1000000;
-		this.flowTimeout = (long) flowTimeout * secToMicrosec;
-		this.activityTimeout = (long) activityTimeout * secToMicrosec;
-		this.initialPackets = initialPackets;
+		this.flowIdleTimeout = (long) flowIdleTimeout * secToMicrosec;
+		this.nFirstPackets = nFirstPackets;
 		flows = new HashMap<String, Flow>();
+		lastDumpTimestamp = 0;
+		flowCounter = 0;
 	}
 
+	/**
+	 * @param packet
+	 */
 	public void addPacket(Packet packet) {
-
+		// Check if the flow timeout passed since the last dump
+		if (packet.getTimestamp() - lastDumpTimestamp > flowIdleTimeout) {
+			flowCounter = flowCounter + dumpTimedoutFlows(packet.getTimestamp());
+			lastDumpTimestamp = packet.getTimestamp();
+		}
+		// Check if packet belongs to an existing flow
+		String flowId = FlowManager.generateFlowId(packet);
+		if (flows.containsKey(flowId)) {
+			Flow flow = flows.get(flowId);
+			// Check if the flow finished due to timestamp
+			if (packet.getTimestamp() - flow.getLastSeen() > flowIdleTimeout) {
+				// Dump flow information to file
+				// Remove flow from list
+				flows.remove(flowId);
+				flowCounter++;
+				// Add flow to list with first packet
+				flows.put(flowId, new Flow(packet));
+			} else {
+				// Update flow information: total length and maximum idle time
+				long packetIAT = packet.getTimestamp() - flow.getLastSeen();
+				flow.sumUpPacketLength(packet.getLength());
+				flow.checkUpdateMaxIdleTime(packetIAT);
+				// Check the number of first packets with features processed
+				if (flow.getPacketLengths().size() <= nFirstPackets) {
+					// Add packet length and inter-arrival time
+					flow.addPacketLength(packet.getLength());
+					flow.addPacketIAT(packetIAT);
+				}
+				// Update last seen
+				flow.setLastSeen(packet.getTimestamp());
+			}
+		} // First packet of a flow
+		else {
+			// Add flow to list with first packet
+			flows.put(flowId, new Flow(packet));
+		}
+	}
+	
+	/**
+	 * @param timestamp
+	 * @return
+	 */
+	private long dumpTimedoutFlows(long timestamp) {
+		long dumpedFlows = 0;
+		for (String flowId : flows.keySet()) {
+			Flow flow = flows.get(flowId);
+			if (timestamp - flow.getLastSeen() > flowIdleTimeout) {
+				// Dump flow information to file
+				// Remove flow from list
+				flows.remove(flowId);
+				dumpedFlows++;
+			}
+		}
+		return dumpedFlows;
 	}
 
 	/**

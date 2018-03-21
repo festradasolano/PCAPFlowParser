@@ -42,9 +42,8 @@ public class PCAPFlowParser {
 		String pcapPath = "/pcap/";
 		String outPath = "/out/";
 		// Define default timeouts in seconds
-		String sFlowTimeout = "60";
-		String sActivityTimeout = "5";
-		String sFirstPackets = "10";
+		String sFlowIdleTimeout = "60";
+		String sNFirstPackets = "10";
 		// Get arguments
 		switch (args.length) {
 		case 1:
@@ -57,20 +56,13 @@ public class PCAPFlowParser {
 		case 3:
 			pcapPath = args[0];
 			outPath = args[1];
-			sFlowTimeout = args[2];
+			sFlowIdleTimeout = args[2];
 			break;
 		case 4:
 			pcapPath = args[0];
 			outPath = args[1];
-			sFlowTimeout = args[2];
-			sActivityTimeout = args[3];
-			break;
-		case 5:
-			pcapPath = args[0];
-			outPath = args[1];
-			sFlowTimeout = args[2];
-			sActivityTimeout = args[3];
-			sFirstPackets = args[4];
+			sFlowIdleTimeout = args[2];
+			sNFirstPackets = args[3];
 			break;
 		}
 		// Check if PCAP path exists and is a directory
@@ -94,38 +86,29 @@ public class PCAPFlowParser {
 			outDir.mkdirs();
 		}
 		// Parse flow timeout to integer
-		int flowTimeout;
+		int flowIdleTimeout;
 		try {
-			flowTimeout = Integer.parseInt(sFlowTimeout);
+			flowIdleTimeout = Integer.parseInt(sFlowIdleTimeout);
 		} catch (Exception e) {
-			flowTimeout = 60;
+			flowIdleTimeout = 60;
 			System.err.println(
-					"Error parsing flow timeout = " + sFlowTimeout + " to integer; using default value " + flowTimeout);
-		}
-		// Parse activity timeout to integer
-		int activityTimeout;
-		try {
-			activityTimeout = Integer.parseInt(sActivityTimeout);
-		} catch (Exception e) {
-			activityTimeout = 5;
-			System.err.println("Error parsing activity timeout = " + sActivityTimeout
-					+ " to integer; using default value " + activityTimeout);
+					"Error parsing flow timeout = " + sFlowIdleTimeout + " to integer; using default value " + flowIdleTimeout);
 		}
 		// Parse initial packets to integer
-		int firstPackets;
+		int nFirstPackets;
 		try {
-			firstPackets = Integer.parseInt(sFirstPackets);
+			nFirstPackets = Integer.parseInt(sNFirstPackets);
 		} catch (Exception e) {
-			firstPackets = 10;
-			System.err.println("Error parsing initial packets = " + sActivityTimeout
-					+ " to integer; using default value " + firstPackets);
+			nFirstPackets = 10;
+			System.err.println("Error parsing initial packets = " + sNFirstPackets
+					+ " to integer; using default value " + nFirstPackets);
 		}
 		// Run PCAPFlowParser
 		PCAPFlowParser parser = new PCAPFlowParser();
-		parser.parsePCAP(pcapDir, outDir, flowTimeout, activityTimeout, firstPackets);
+		parser.parsePCAP(pcapDir, outDir, flowIdleTimeout, nFirstPackets);
 	}
 
-	private void parsePCAP(File pcapDir, File outDir, int flowTimeout, int activityTimeout, int firstPackets) {
+	private void parsePCAP(File pcapDir, File outDir, int flowIdleTimeout, int nFirstPackets) {
 		long start = System.currentTimeMillis();
 		// Get the list of files in the PCAP directory
 		int nFiles = pcapDir.list().length;
@@ -133,9 +116,9 @@ public class PCAPFlowParser {
 		//
 		int nValidFiles = 0;
 		int nErrorFiles = 0;
-		int nPackets = 0;
-		int nValidPackets = 0;
-		int nErrorPackets = 0;
+		long nPackets = 0;
+		long nValidPackets = 0;
+		long nErrorPackets = 0;
 		for (File pcapFile : pcapDir.listFiles()) {
 			System.out.println("Parsing file: " + pcapFile.getName());
 			// Read and check PCAP file
@@ -158,8 +141,8 @@ public class PCAPFlowParser {
 							break;
 						}
 						nValidPackets++;
+						//
 					}
-					
 				}
 			}
 		}

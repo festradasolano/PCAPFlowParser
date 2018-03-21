@@ -16,6 +16,7 @@
 
 package co.edu.unicauca.dtm.pcapflowparser.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,49 +31,9 @@ import java.util.List;
 public class Flow {
 	
 	/**
-	 * Ethernet source address
+	 * First packet of the flow
 	 */
-	private byte[] ethSrc;
-	
-	/**
-	 * Ethernet destination address
-	 */
-	private byte[] ethDst;
-	
-	/**
-	 * Ethernet type
-	 */
-	private int ethType;
-	
-	/**
-	 * VLAN identifier
-	 */
-	private int vlanId;
-	
-	/**
-	 * IPv4/IPv6 source address
-	 */
-	private byte[] ipSrc;
-	
-	/**
-	 * IPv4/IPv6 destination address
-	 */
-	private byte[] ipDst;
-	
-	/**
-	 * IPv4 protocol
-	 */
-	private int ipProto;
-	
-	/**
-	 * TCP/UDP source port
-	 */
-	private int portSrc;
-	
-	/**
-	 * TCP/UDP destination port
-	 */
-	private int portDst;
+	private Packet firstPacket;
 	
 	/**
 	 * Start time in microseconds
@@ -85,19 +46,14 @@ public class Flow {
 	private long lastSeen;
 
 	/**
-	 * Size in bytes
+	 * Total length in bytes
 	 */
-	private long size;
+	private long totalLength;
 	
 	/**
-	 * Start of active time in microseconds
+	 * Maximum idle time
 	 */
-	private long startActiveTime;
-	
-	/**
-	 * End of active time in microseconds
-	 */
-	private long endActiveTime;
+	private long maxIdleTime;
 	
 	/**
 	 * Lengths in bytes of the first N packets
@@ -108,5 +64,156 @@ public class Flow {
 	 * Inter-arrival times in microseconds of the first N packets
 	 */
 	private List<Long> packetIATs;
+	
+	/**
+	 * 
+	 */
+	public Flow() {
+		super();
+	}
+	
+	/**
+	 * @param firstPacket
+	 */
+	public Flow(Packet firstPacket) {
+		super();
+		this.firstPacket = firstPacket;
+		startTime = firstPacket.getTimestamp();
+		lastSeen = firstPacket.getTimestamp();
+		totalLength = (long) firstPacket.getLength();
+		maxIdleTime = firstPacket.getTimestamp() - lastSeen;
+		packetLengths = new ArrayList<Integer>();
+		packetLengths.add(firstPacket.getLength());
+		packetIATs = new ArrayList<Long>();
+		packetIATs.add(firstPacket.getTimestamp() - lastSeen);
+	}
+
+	/**
+	 * @return the firstPacket
+	 */
+	public Packet getFirstPacket() {
+		return firstPacket;
+	}
+
+	/**
+	 * @param firstPacket the firstPacket to set
+	 */
+	public void setFirstPacket(Packet firstPacket) {
+		this.firstPacket = firstPacket;
+	}
+
+	/**
+	 * @return the startTime
+	 */
+	public long getStartTime() {
+		return startTime;
+	}
+
+	/**
+	 * @param startTime the startTime to set
+	 */
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+
+	/**
+	 * @return the lastSeen
+	 */
+	public long getLastSeen() {
+		return lastSeen;
+	}
+
+	/**
+	 * @param lastSeen the lastSeen to set
+	 */
+	public void setLastSeen(long lastSeen) {
+		this.lastSeen = lastSeen;
+	}
+
+	/**
+	 * @return the totalLength
+	 */
+	public long getTotalLength() {
+		return totalLength;
+	}
+
+	/**
+	 * @param totalLength the totalLength to set
+	 */
+	public void setTotalLength(long totalLength) {
+		this.totalLength = totalLength;
+	}
+	
+	/**
+	 * @param packetLength
+	 */
+	public void sumUpPacketLength(int packetLength) {
+		totalLength = totalLength + packetLength;
+	}
+
+	/**
+	 * @return the maxIdleTime
+	 */
+	public long getMaxIdleTime() {
+		return maxIdleTime;
+	}
+
+	/**
+	 * @param maxIdleTime the maxIdleTime to set
+	 */
+	public void setMaxIdleTime(long maxIdleTime) {
+		this.maxIdleTime = maxIdleTime;
+	}
+	
+	/**
+	 * @param packetIAT
+	 */
+	public void checkUpdateMaxIdleTime(long packetIAT) {
+		if (packetIAT > maxIdleTime) {
+			maxIdleTime = packetIAT;
+		}
+	}
+
+	/**
+	 * @return the packetLengths
+	 */
+	public List<Integer> getPacketLengths() {
+		return packetLengths;
+	}
+
+	/**
+	 * @param packetLengths the packetLengths to set
+	 */
+	public void setPacketLengths(List<Integer> packetLengths) {
+		this.packetLengths = packetLengths;
+	}
+	
+	/**
+	 * @param packetLength
+	 */
+	public void addPacketLength(int packetLength) {
+		packetLengths.add(packetLength);
+	}
+
+	/**
+	 * @return the packetIATs
+	 */
+	public List<Long> getPacketIATs() {
+		return packetIATs;
+	}
+
+	/**
+	 * @param packetIATs the packetIATs to set
+	 */
+	public void setPacketIATs(List<Long> packetIATs) {
+		this.packetIATs = packetIATs;
+	}
+	
+	/**
+	 * @param packetTimestamp
+	 */
+	public void addPacketIAT(long iat) {
+		packetIATs.add(iat);
+	}
 
 }

@@ -19,7 +19,7 @@ package co.edu.unicauca.dtm.pcapflowparser.model;
 import org.jnetpcap.packet.format.FormatUtils;
 
 /**
- * 
+ * This class models a packet.
  * 
  * Copyright 2018 Felipe Estrada-Solano <festradasolano at gmail>
  * 
@@ -95,7 +95,7 @@ public class Packet {
 	private int portDst;
 
 	/**
-	 * Constructor that generates the identifier of the packet
+	 * Constructor that initializes the parameters to zeros
 	 */
 	public Packet() {
 		super();
@@ -113,7 +113,7 @@ public class Packet {
 	}
 
 	/**
-	 * @return the timestamp
+	 * @return the arrival time in microseconds
 	 */
 	public long getTimestamp() {
 		return timestamp;
@@ -121,14 +121,14 @@ public class Packet {
 
 	/**
 	 * @param timestamp
-	 *            the timestamp to set
+	 *            the arrival time in microseconds to set
 	 */
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 
 	/**
-	 * @return the length
+	 * @return the length on wire in bytes
 	 */
 	public int getLength() {
 		return length;
@@ -136,7 +136,7 @@ public class Packet {
 
 	/**
 	 * @param length
-	 *            the length to set
+	 *            the length on wire in bytes to set
 	 */
 	public void setLength(int length) {
 		this.length = length;
@@ -158,7 +158,7 @@ public class Packet {
 
 	/**
 	 * @param ethSrc
-	 *            the Ethernet source address in bytes
+	 *            the Ethernet source address in bytes to set
 	 */
 	public void setEthSrc(byte[] ethSrc) {
 		this.ethSrc = ethSrc;
@@ -180,14 +180,14 @@ public class Packet {
 
 	/**
 	 * @param ethDst
-	 *            the Ethernet destination address in bytes
+	 *            the Ethernet destination address in bytes to set
 	 */
 	public void setEthDst(byte[] ethDst) {
 		this.ethDst = ethDst;
 	}
 
 	/**
-	 * @return the ethType
+	 * @return the Ethernet type
 	 */
 	public int getEthType() {
 		return ethType;
@@ -195,14 +195,14 @@ public class Packet {
 
 	/**
 	 * @param ethType
-	 *            the ethType to set
+	 *            the Ethernet type to set
 	 */
 	public void setEthType(int ethType) {
 		this.ethType = ethType;
 	}
 
 	/**
-	 * @return the vlanId
+	 * @return the VLAN identifier
 	 */
 	public int getVlanId() {
 		return vlanId;
@@ -210,7 +210,7 @@ public class Packet {
 
 	/**
 	 * @param vlanId
-	 *            the vlanId to set
+	 *            the VLAN identifier to set
 	 */
 	public void setVlanId(int vlanId) {
 		this.vlanId = vlanId;
@@ -263,7 +263,7 @@ public class Packet {
 	}
 
 	/**
-	 * @return the ipProto
+	 * @return the IPv4 protocol
 	 */
 	public int getIpProto() {
 		return ipProto;
@@ -271,14 +271,14 @@ public class Packet {
 
 	/**
 	 * @param ipProto
-	 *            the ipProto to set
+	 *            the IPv4 protocol to set
 	 */
 	public void setIpProto(int ipProto) {
 		this.ipProto = ipProto;
 	}
 
 	/**
-	 * @return the portSrc
+	 * @return the TCP/UDP source port
 	 */
 	public int getPortSrc() {
 		return portSrc;
@@ -286,14 +286,14 @@ public class Packet {
 
 	/**
 	 * @param portSrc
-	 *            the portSrc to set
+	 *            the TCP/UDP source port to set
 	 */
 	public void setPortSrc(int portSrc) {
 		this.portSrc = portSrc;
 	}
 
 	/**
-	 * @return the portDst
+	 * @return the TCP/UDP destination port
 	 */
 	public int getPortDst() {
 		return portDst;
@@ -301,7 +301,7 @@ public class Packet {
 
 	/**
 	 * @param portDst
-	 *            the portDst to set
+	 *            the TCP/UDP destination port to set
 	 */
 	public void setPortDst(int portDst) {
 		this.portDst = portDst;
