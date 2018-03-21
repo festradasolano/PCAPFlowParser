@@ -30,55 +30,65 @@ import org.jnetpcap.packet.format.FormatUtils;
 public class Packet {
 
 	/**
+	 * Unknown, invalid, or non-applicable Ethernet address: 00:00:00:00:00:00
+	 */
+	public static final byte[] ETH_UNKNOWN = FormatUtils.toByteArray("000000000000");
+
+	/**
+	 * Unknown, invalid, or non-applicable IPv4 address: 0.0.0.0
+	 */
+	public static final byte[] IP_UNKNOWN = FormatUtils.toByteArray("00000000");
+
+	/**
 	 * Arrival time in microseconds
 	 */
 	private long timestamp;
-	
+
 	/**
 	 * Length on wire in bytes
 	 */
 	private int length;
-	
+
 	/**
 	 * Ethernet source address
 	 */
 	private byte[] ethSrc;
-	
+
 	/**
 	 * Ethernet destination address
 	 */
 	private byte[] ethDst;
-	
+
 	/**
 	 * Ethernet type
 	 */
 	private int ethType;
-	
+
 	/**
 	 * VLAN identifier
 	 */
 	private int vlanId;
-	
+
 	/**
 	 * IPv4/IPv6 source address
 	 */
 	private byte[] ipSrc;
-	
+
 	/**
 	 * IPv4/IPv6 destination address
 	 */
 	private byte[] ipDst;
-	
+
 	/**
 	 * IPv4 protocol
 	 */
 	private int ipProto;
-	
+
 	/**
 	 * TCP/UDP source port
 	 */
 	private int portSrc;
-	
+
 	/**
 	 * TCP/UDP destination port
 	 */
@@ -91,12 +101,12 @@ public class Packet {
 		super();
 		timestamp = 0;
 		length = 0;
-		ethSrc = FormatUtils.toByteArray("000000000000");
-		ethDst = FormatUtils.toByteArray("000000000000");
+		ethSrc = Packet.ETH_UNKNOWN;
+		ethDst = Packet.ETH_UNKNOWN;
 		ethType = 0;
 		vlanId = 0;
-		ipSrc = FormatUtils.toByteArray("00000000");
-		ipDst = FormatUtils.toByteArray("00000000");
+		ipSrc = Packet.IP_UNKNOWN;
+		ipDst = Packet.IP_UNKNOWN;
 		ipProto = 0;
 		portSrc = 0;
 		portDst = 0;
@@ -110,7 +120,8 @@ public class Packet {
 	}
 
 	/**
-	 * @param timestamp the timestamp to set
+	 * @param timestamp
+	 *            the timestamp to set
 	 */
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
@@ -124,35 +135,52 @@ public class Packet {
 	}
 
 	/**
-	 * @param length the length to set
+	 * @param length
+	 *            the length to set
 	 */
 	public void setLength(int length) {
 		this.length = length;
 	}
 
 	/**
-	 * @return the ethSrc
+	 * @return the Ethernet source address in bytes
 	 */
 	public byte[] getEthSrc() {
 		return ethSrc;
 	}
-	
+
 	/**
-	 * @param ethSrc the ethSrc to set
+	 * @return the Ethernet source address in hexadecimal notation
+	 */
+	public String getEthSrcHex() {
+		return FormatUtils.mac(ethSrc);
+	}
+
+	/**
+	 * @param ethSrc
+	 *            the Ethernet source address in bytes
 	 */
 	public void setEthSrc(byte[] ethSrc) {
 		this.ethSrc = ethSrc;
 	}
 
 	/**
-	 * @return the ethDst
+	 * @return the Ethernet destination address in bytes
 	 */
 	public byte[] getEthDst() {
 		return ethDst;
 	}
 
 	/**
-	 * @param ethDst the ethDst to set
+	 * @return the Ethernet destination address in hexadecimal notation
+	 */
+	public String getEthDstHex() {
+		return FormatUtils.mac(ethDst);
+	}
+
+	/**
+	 * @param ethDst
+	 *            the Ethernet destination address in bytes
 	 */
 	public void setEthDst(byte[] ethDst) {
 		this.ethDst = ethDst;
@@ -166,7 +194,8 @@ public class Packet {
 	}
 
 	/**
-	 * @param ethType the ethType to set
+	 * @param ethType
+	 *            the ethType to set
 	 */
 	public void setEthType(int ethType) {
 		this.ethType = ethType;
@@ -180,35 +209,54 @@ public class Packet {
 	}
 
 	/**
-	 * @param vlanId the vlanId to set
+	 * @param vlanId
+	 *            the vlanId to set
 	 */
 	public void setVlanId(int vlanId) {
 		this.vlanId = vlanId;
 	}
 
 	/**
-	 * @return the ipSrc
+	 * @return the IPv4/IPv6 source address in bytes
 	 */
 	public byte[] getIpSrc() {
 		return ipSrc;
 	}
 
 	/**
-	 * @param ipSrc the ipSrc to set
+	 * @return the IPv4/IPv6 source address in dot-decimal notation for IPv4 and in
+	 *         hexadecimal notation for IPv6
+	 */
+	public String getIpSrcString() {
+		return FormatUtils.ip(ipSrc);
+	}
+
+	/**
+	 * @param ipSrc
+	 *            the IPv4/IPv6 source address in bytes
 	 */
 	public void setIpSrc(byte[] ipSrc) {
 		this.ipSrc = ipSrc;
 	}
 
 	/**
-	 * @return the ipDst
+	 * @return the IPv4/IPv6 destination address in bytes
 	 */
 	public byte[] getIpDst() {
 		return ipDst;
 	}
 
 	/**
-	 * @param ipDst the ipDst to set
+	 * @return the IPv4/IPv6 destination address in dot-decimal notation for IPv4
+	 *         and in hexadecimal notation for IPv6
+	 */
+	public String getIpDstString() {
+		return FormatUtils.ip(ipDst);
+	}
+
+	/**
+	 * @param ipDst
+	 *            the IPv4/IPv6 destination address in bytes
 	 */
 	public void setIpDst(byte[] ipDst) {
 		this.ipDst = ipDst;
@@ -222,7 +270,8 @@ public class Packet {
 	}
 
 	/**
-	 * @param ipProto the ipProto to set
+	 * @param ipProto
+	 *            the ipProto to set
 	 */
 	public void setIpProto(int ipProto) {
 		this.ipProto = ipProto;
@@ -236,7 +285,8 @@ public class Packet {
 	}
 
 	/**
-	 * @param portSrc the portSrc to set
+	 * @param portSrc
+	 *            the portSrc to set
 	 */
 	public void setPortSrc(int portSrc) {
 		this.portSrc = portSrc;
@@ -250,10 +300,11 @@ public class Packet {
 	}
 
 	/**
-	 * @param portDst the portDst to set
+	 * @param portDst
+	 *            the portDst to set
 	 */
 	public void setPortDst(int portDst) {
 		this.portDst = portDst;
 	}
-	
+
 }
