@@ -66,7 +66,9 @@ public enum FlowFeature {
 	public static String getCSVHeader(int nFirstPackets) {
 		StringBuilder header = new StringBuilder();
 		for (FlowFeature feature : FlowFeature.values()) {
+			// Check if feature is for the N first packets
 			if (feature.isNFirst()) {
+				// Generate feature for the N first packets
 				for (int i = 1; i <= nFirstPackets; i++) {
 					header.append(feature.getName()).append(i).append(",");
 				}

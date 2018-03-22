@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import co.edu.unicauca.dtm.pcapflowparser.model.Flow;
 import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
@@ -40,12 +42,12 @@ public class FlowManager {
 	/**
 	 * 
 	 */
-	long flowIdleTimeout;
+	private long flowIdleTimeout;
 
 	/**
 	 * 
 	 */
-	int nFirstPackets;
+	private int nFirstPackets;
 	
 	/**
 	 * 
@@ -55,13 +57,16 @@ public class FlowManager {
 	/**
 	 * 
 	 */
-	long lastDumpTimestamp;
+	private long lastDumpTimestamp;
 	
 	/**
 	 * 
 	 */
-	long flowCounter;
+	private long flowCounter;
 	
+	/**
+	 * 
+	 */
 	FileOutputStream output;
 
 	/**
@@ -103,16 +108,17 @@ public class FlowManager {
 	public void addPacket(Packet packet) {
 		// Check if the flow timeout passed since the last dump
 		if (packet.getTimestamp() - lastDumpTimestamp > flowIdleTimeout) {
-			flowCounter = flowCounter + dumpTimedoutFlows(packet.getTimestamp());
+			dumpTimedoutFlows(packet.getTimestamp());
 			lastDumpTimestamp = packet.getTimestamp();
 		}
 		// Check if packet belongs to an existing flow
 		String flowId = FlowManager.generateFlowId(packet);
 		if (flows.containsKey(flowId)) {
 			Flow flow = flows.get(flowId);
-			// Check if the flow finished due to timestamp
+			// Check if the flow finished due to timeout
 			if (packet.getTimestamp() - flow.getLastSeen() > flowIdleTimeout) {
 				// Dump flow information to file
+				dumpFlowToFile(flow);
 				// Remove flow from list
 				flows.remove(flowId);
 				flowCounter++;
@@ -140,21 +146,49 @@ public class FlowManager {
 	}
 	
 	/**
-	 * @param timestamp
 	 * @return
 	 */
-	private long dumpTimedoutFlows(long timestamp) {
-		long dumpedFlows = 0;
+	public long dumpLastFlows() {
+		for (Flow flow : flows.values()) {
+			// Dump flow information to file
+			dumpFlowToFile(flow);
+			flowCounter++;
+		}
+		return flowCounter;
+	}
+	
+	/**
+	 * @param timestamp
+	 */
+	private void dumpTimedoutFlows(long timestamp) {
+		// Go through every flow
+		List<String> removeFlowId = new ArrayList<String>();
 		for (String flowId : flows.keySet()) {
+			// Check if flow timed-out
 			Flow flow = flows.get(flowId);
 			if (timestamp - flow.getLastSeen() > flowIdleTimeout) {
 				// Dump flow information to file
-				// Remove flow from list
-				flows.remove(flowId);
-				dumpedFlows++;
+				dumpFlowToFile(flow);
+				flowCounter++;
+				// Add flow ID to the removing list
+				removeFlowId.add(flowId);
 			}
 		}
-		return dumpedFlows;
+		// Remove dumped flows from list
+		for (String flowId : removeFlowId) {
+			flows.remove(flowId);
+		}
+	}
+	
+	/**
+	 * @param flow
+	 */
+	private void dumpFlowToFile(Flow flow) {
+		try {
+			output.write(String.valueOf(flow.toCSV(nFirstPackets) + "\n").getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -169,7 +203,7 @@ public class FlowManager {
 	 * @return the flow identifier
 	 */
 	public static String generateFlowId(Packet packet) {
-		StringBuilder flowId = new StringBuilder("");
+		StringBuilder flowId = new StringBuilder();
 		// Check if IPv4/IPv6 source/destination addresses exist
 		if (packet.getIpSrc() != Packet.IP_UNKNOWN && packet.getIpDst() != Packet.IP_UNKNOWN) {
 			flowId.append(packet.getIpSrcString());

@@ -130,7 +130,7 @@ public class PCAPFlowParser {
 		long nValidPackets = 0;
 		long nErrorPackets = 0;
 		for (File pcapFile : pcapDir.listFiles()) {
-			System.out.println("Parsing file: " + pcapFile.getName());
+			System.out.println("Parsing file: " + pcapFile.getName() + " ...");
 			// Read and check PCAP file
 			PacketManager packetMgr = new PacketManager();
 			if (!packetMgr.config(pcapFile.getAbsolutePath())) {
@@ -138,8 +138,7 @@ public class PCAPFlowParser {
 				System.err.println("Error while opening file: " + pcapFile.getName());
 			} else {
 				nValidFiles++;
-//				while(true) {
-				for (int i = 0; i < 2; i++) {
+				while(true) {
 					nPackets++;
 					Packet packet = packetMgr.nextPacket();
 					if (packet == null) {
@@ -147,18 +146,24 @@ public class PCAPFlowParser {
 					} else {
 						// Check end of file
 						if (packet.getTimestamp() == -1) {
-							System.out.println("End of file: " + pcapFile.getName());
+							System.out.println("\t... end of file: " + pcapFile.getName());
 							break;
 						}
 						nValidPackets++;
-						//
+						// Process packet
+						flowManager.addPacket(packet);
 					}
 				}
 			}
 		}
-		long end = System.currentTimeMillis();
+		// Dump last flows
+		long nFlows = flowManager.dumpLastFlows();
 		// Report statistics
-		System.out.println("Done! in " + ((end - start) / 1000.0) + " seconds.");
+		long end = System.currentTimeMillis();
+		System.out.println("======================");
+		System.out.println("     FINAL REPORT     ");
+		System.out.println("======================");
+		System.out.println("Done! in " + ((end - start) / 1000.0) + " seconds");
 		System.out.println("PCAP files");
 		System.out.println(" - Total = " + nFiles);
 		System.out.println(" - Valid = " + nValidFiles);
@@ -167,6 +172,8 @@ public class PCAPFlowParser {
 		System.out.println(" - Total = " + nPackets);
 		System.out.println(" - Valid = " + nValidPackets);
 		System.out.println(" - Error = " + nErrorPackets);
+		System.out.println("Flows");
+		System.out.println(" - Total = " + nFlows);
 	}
 
 }
