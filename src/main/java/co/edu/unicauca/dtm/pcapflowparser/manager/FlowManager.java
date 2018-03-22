@@ -16,9 +16,14 @@
 
 package co.edu.unicauca.dtm.pcapflowparser.manager;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 
 import co.edu.unicauca.dtm.pcapflowparser.model.Flow;
+import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
 import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
 
 /**
@@ -56,6 +61,8 @@ public class FlowManager {
 	 * 
 	 */
 	long flowCounter;
+	
+	FileOutputStream output;
 
 	/**
 	 * @param flowTimeout
@@ -66,14 +73,28 @@ public class FlowManager {
 	 *            number of packets at the beginning of a flow for processing
 	 *            features
 	 */
-	public FlowManager(int flowIdleTimeout, int activityTimeout, int nFirstPackets) {
+	public FlowManager(String pcapDirName, String outDirPath, int flowIdleTimeout, int nFirstPackets) throws FileNotFoundException {
 		super();
+		// Set input parameters
 		long secToMicrosec = 1000000;
 		this.flowIdleTimeout = (long) flowIdleTimeout * secToMicrosec;
 		this.nFirstPackets = nFirstPackets;
+		// Initialize parameters
 		flows = new HashMap<String, Flow>();
 		lastDumpTimestamp = 0;
 		flowCounter = 0;
+		// Check if output CSV file exists
+		File csvFile = new File(outDirPath + "/" + pcapDirName + ".csv");
+		if (csvFile.exists()) {
+			csvFile.delete();
+		}
+		// Create CSV file writer
+		output = new FileOutputStream(csvFile);
+		try {
+			output.write(String.valueOf(FlowFeature.getCSVHeader(this.nFirstPackets) + "\n").getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -148,7 +169,7 @@ public class FlowManager {
 	 * @return the flow identifier
 	 */
 	public static String generateFlowId(Packet packet) {
-		StringBuffer flowId = new StringBuffer("");
+		StringBuilder flowId = new StringBuilder("");
 		// Check if IPv4/IPv6 source/destination addresses exist
 		if (packet.getIpSrc() != Packet.IP_UNKNOWN && packet.getIpDst() != Packet.IP_UNKNOWN) {
 			flowId.append(packet.getIpSrcString());

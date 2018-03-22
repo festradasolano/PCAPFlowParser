@@ -18,18 +18,64 @@ public enum FlowFeature {
 	DURATION("duration"),
 	MAX_IDLE_TIME("max_idle_time");
 	
+	/**
+	 * 
+	 */
 	private final String name;
 	
+	/**
+	 * 
+	 */
 	private final boolean isNFirst;
 	
+	/**
+	 * @param name
+	 */
 	FlowFeature(String name) {
 		this.name = name;
 		this.isNFirst = false;
 	}
 	
+	/**
+	 * @param name
+	 * @param isNFirst
+	 */
 	FlowFeature(String name, boolean isNFirst) {
 		this.name = name;
 		this.isNFirst = isNFirst;
+	}
+	
+	/**
+	 * @return
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isNFirst() {
+		return isNFirst;
+	}
+
+	/**
+	 * @param nFirstPackets
+	 * @return
+	 */
+	public static String getCSVHeader(int nFirstPackets) {
+		StringBuilder header = new StringBuilder();
+		for (FlowFeature feature : FlowFeature.values()) {
+			if (feature.isNFirst()) {
+				for (int i = 1; i <= nFirstPackets; i++) {
+					header.append(feature.getName()).append(i).append(",");
+				}
+			} else {
+				header.append(feature.getName()).append(",");
+			}
+		}
+		header.deleteCharAt(header.length() - 1);
+		return header.toString();
 	}
 
 }

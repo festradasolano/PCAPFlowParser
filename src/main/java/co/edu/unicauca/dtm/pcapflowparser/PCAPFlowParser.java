@@ -17,7 +17,9 @@
 package co.edu.unicauca.dtm.pcapflowparser;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
+import co.edu.unicauca.dtm.pcapflowparser.manager.FlowManager;
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
 import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
 
@@ -79,7 +81,7 @@ public class PCAPFlowParser {
 		File outDir = new File(outPath);
 		if (outDir.exists()) {
 			if (!outDir.isDirectory()) {
-				System.err.println("Output path " + outPath + " must point to a directory for the output files");
+				System.err.println("Output path " + outPath + " must point to a directory for the output file");
 				System.exit(-1);
 			}
 		} else {
@@ -113,7 +115,15 @@ public class PCAPFlowParser {
 		// Get the list of files in the PCAP directory
 		int nFiles = pcapDir.list().length;
 		System.out.println("Found " + nFiles + " files in " + pcapDir.getAbsolutePath());
-		//
+		// Flow manager
+		FlowManager flowManager;
+		try {
+			flowManager = new FlowManager(pcapDir.getName(), outDir.getAbsolutePath(), flowIdleTimeout, nFirstPackets);
+		} catch (FileNotFoundException e) {
+			System.err.println("Error creating CSV file writer");
+			return;
+		}
+		// Read and process packets
 		int nValidFiles = 0;
 		int nErrorFiles = 0;
 		long nPackets = 0;
