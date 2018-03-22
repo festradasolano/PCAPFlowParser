@@ -18,6 +18,7 @@ package co.edu.unicauca.dtm.pcapflowparser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 import co.edu.unicauca.dtm.pcapflowparser.manager.FlowManager;
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
@@ -123,13 +124,16 @@ public class PCAPFlowParser {
 			System.err.println("Error creating CSV file writer");
 			return;
 		}
-		// Read and process packets
+		// Report parameters
 		int nValidFiles = 0;
 		int nErrorFiles = 0;
 		long nPackets = 0;
 		long nValidPackets = 0;
 		long nErrorPackets = 0;
-		for (File pcapFile : pcapDir.listFiles()) {
+		// Sort PCAP files and read each one
+		File[] pcapFiles = pcapDir.listFiles();
+		Arrays.sort(pcapFiles);
+		for (File pcapFile : pcapFiles) {
 			System.out.println("Parsing file: " + pcapFile.getName() + " ...");
 			// Read and check PCAP file
 			PacketManager packetMgr = new PacketManager();
@@ -139,6 +143,7 @@ public class PCAPFlowParser {
 			} else {
 				nValidFiles++;
 				while(true) {
+					// Read next packet and check validity
 					nPackets++;
 					Packet packet = packetMgr.nextPacket();
 					if (packet == null) {
@@ -150,7 +155,7 @@ public class PCAPFlowParser {
 							break;
 						}
 						nValidPackets++;
-						// Process packet
+						// Process packet in terms of flows
 						flowManager.addPacket(packet);
 					}
 				}

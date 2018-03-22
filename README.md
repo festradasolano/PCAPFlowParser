@@ -6,7 +6,8 @@ Based on the ISCXFlowMeter project.
 Features
  - No bidirectional
  - Timeouts entry in seconds
- - Length of packet on wire from captured header for obtaining the actual size of packet (solves the problem of getting the payload size from anonymized data since the payload has been removed from the captured packet) 
+ - Length of packet on wire from captured header for obtaining the actual size of packet (solves the problem of getting the payload size from anonymized data since the payload has been removed from the captured packet)
+ - PCAP files should be in alphabetical order. Add the leading zeros to the left depending on the number of files, e.g., pcap001 instead of pcap1 
 
 Steps:
 1. Install libpcap-dev (sudo apt-get install libpcap-dev)
