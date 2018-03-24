@@ -1,0 +1,10 @@
+To do tasks:
+
+1. Add flow end time to CSV.
+2. Add active timeout. If active timeout and idle timeout are zero (0), then no timeout, respectively.
+3. Add mean/max/min/std IAT of flows
+4. Add number of previous timeouts (active or idle) and the time since previous timeout (useful when defining timeouts)
+
+Optional
+1. Check how to recognize out-of-order and DUPACK
+2. When timing-out a TCP flow due to FYN, how probable a future TCP connection will use the same flow headers (belong to the same timed-out flow)
