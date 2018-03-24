@@ -45,7 +45,9 @@ public class PCAPFlowParser {
 		String pcapPath = "/pcap/";
 		String outPath = "/out/";
 		// Define default timeouts in seconds
-		String sFlowIdleTimeout = "60";
+		String sFlowActiveTimeout = "0";
+		String sFlowIdleTimeout = "0";
+		// Define default number of first packets to collect info
 		String sNFirstPackets = "10";
 		// Get arguments
 		switch (args.length) {
@@ -59,13 +61,20 @@ public class PCAPFlowParser {
 		case 3:
 			pcapPath = args[0];
 			outPath = args[1];
-			sFlowIdleTimeout = args[2];
+			sFlowActiveTimeout = args[2];
 			break;
 		case 4:
 			pcapPath = args[0];
 			outPath = args[1];
-			sFlowIdleTimeout = args[2];
-			sNFirstPackets = args[3];
+			sFlowActiveTimeout = args[2];
+			sFlowIdleTimeout = args[3];
+			break;
+		case 5:
+			pcapPath = args[0];
+			outPath = args[1];
+			sFlowActiveTimeout = args[2];
+			sFlowIdleTimeout = args[3];
+			sNFirstPackets = args[4];
 			break;
 		}
 		// Check if PCAP path exists and is a directory
@@ -88,14 +97,23 @@ public class PCAPFlowParser {
 		} else {
 			outDir.mkdirs();
 		}
-		// Parse flow timeout to integer
+		// Parse flow active timeout to integer
+		int flowActiveTimeout;
+		try {
+			flowActiveTimeout = Integer.parseInt(sFlowActiveTimeout);
+		} catch (Exception e) {
+			flowActiveTimeout = 60;
+			System.err.println("Error parsing flow active timeout = " + sFlowActiveTimeout
+					+ " to integer. Using default flow active timeout " + flowActiveTimeout + " seconds");
+		}
+		// Parse flow idle timeout to integer
 		int flowIdleTimeout;
 		try {
 			flowIdleTimeout = Integer.parseInt(sFlowIdleTimeout);
 		} catch (Exception e) {
 			flowIdleTimeout = 60;
-			System.err.println(
-					"Error parsing flow timeout = " + sFlowIdleTimeout + " to integer; using default value " + flowIdleTimeout);
+			System.err.println("Error parsing flow idle timeout = " + sFlowIdleTimeout
+					+ " to integer. Using default flow idle timeout = " + flowIdleTimeout + " seconds");
 		}
 		// Parse initial packets to integer
 		int nFirstPackets;
@@ -103,15 +121,15 @@ public class PCAPFlowParser {
 			nFirstPackets = Integer.parseInt(sNFirstPackets);
 		} catch (Exception e) {
 			nFirstPackets = 10;
-			System.err.println("Error parsing initial packets = " + sNFirstPackets
-					+ " to integer; using default value " + nFirstPackets);
+			System.err.println("Error parsing number of initial packets = " + sNFirstPackets
+					+ " to integer. Using default number of initial packets = " + nFirstPackets);
 		}
 		// Run PCAPFlowParser
 		PCAPFlowParser parser = new PCAPFlowParser();
-		parser.parsePCAP(pcapDir, outDir, flowIdleTimeout, nFirstPackets);
+		parser.parsePCAP(pcapDir, outDir, flowActiveTimeout, flowIdleTimeout, nFirstPackets);
 	}
 
-	private void parsePCAP(File pcapDir, File outDir, int flowIdleTimeout, int nFirstPackets) {
+	private void parsePCAP(File pcapDir, File outDir, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) {
 		long start = System.currentTimeMillis();
 		// Get the list of files in the PCAP directory
 		int nFiles = pcapDir.list().length;
@@ -119,7 +137,8 @@ public class PCAPFlowParser {
 		// Flow manager
 		FlowManager flowManager;
 		try {
-			flowManager = new FlowManager(pcapDir.getName(), outDir.getAbsolutePath(), flowIdleTimeout, nFirstPackets);
+			flowManager = new FlowManager(pcapDir.getName(), outDir.getAbsolutePath(), flowActiveTimeout,
+					flowIdleTimeout, nFirstPackets);
 		} catch (FileNotFoundException e) {
 			System.err.println("Error creating CSV file writer");
 			return;
@@ -142,9 +161,8 @@ public class PCAPFlowParser {
 				System.err.println("Error while opening file: " + pcapFile.getName());
 			} else {
 				nValidFiles++;
-				while(true) {
+				while (true) {
 					// Read next packet and check validity
-					nPackets++;
 					Packet packet = packetMgr.nextPacket();
 					if (packet == null) {
 						nErrorPackets++;
@@ -158,6 +176,7 @@ public class PCAPFlowParser {
 						// Process packet in terms of flows
 						flowManager.addPacket(packet);
 					}
+					nPackets++;
 				}
 			}
 		}

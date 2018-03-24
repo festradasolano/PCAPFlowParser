@@ -1,8 +1,9 @@
 To do tasks:
 
- - Add active timeout. If active timeout and idle timeout are zero (0), then no timeout, respectively
  - Add mean/max/min/std IAT of flows
  - Add number of previous timeouts (active or idle) and the time since previous timeout (useful when defining timeouts)
+ - Write report file
+ - Handle files as input and output paths 
 
 Optional:
  - Check how to recognize out-of-order and DUPACK

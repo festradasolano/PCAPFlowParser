@@ -15,9 +15,9 @@ public enum FlowFeature {
 	VLAN_ID("vlan_id"),
 	PACKET_SIZE("size_pkt", true),
 	PACKET_IAT("iat_pkt", true),
-	SIZE("size")
-//	DURATION("duration"),
-//	MAX_IDLE_TIME("max_idle_time")
+	SIZE("size"),
+	DURATION("duration"),
+	MAX_IDLE_TIME("max_idle_time")
 	;
 	
 	/**

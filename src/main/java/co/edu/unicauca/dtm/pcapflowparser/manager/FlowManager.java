@@ -42,6 +42,11 @@ public class FlowManager {
 	/**
 	 * 
 	 */
+	private long flowActiveTimeout;
+	
+	/**
+	 * 
+	 */
 	private long flowIdleTimeout;
 
 	/**
@@ -54,6 +59,11 @@ public class FlowManager {
 	 */
 	private HashMap<String, Flow> flows;
 
+	/**
+	 * Timeout used for cleaning the list of flows (avoid keeping flows that are no longer active)
+	 */
+	private long dumpTimeout;
+	
 	/**
 	 * 
 	 */
@@ -78,16 +88,30 @@ public class FlowManager {
 	 *            number of packets at the beginning of a flow for processing
 	 *            features
 	 */
-	public FlowManager(String pcapDirName, String outDirPath, int flowIdleTimeout, int nFirstPackets) throws FileNotFoundException {
+	public FlowManager(String pcapDirName, String outDirPath, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) throws FileNotFoundException {
 		super();
 		// Set input parameters
 		long secToMicrosec = 1000000;
+		this.flowActiveTimeout = (long) flowActiveTimeout * secToMicrosec;
 		this.flowIdleTimeout = (long) flowIdleTimeout * secToMicrosec;
 		this.nFirstPackets = nFirstPackets;
+		// Set dump timeout with the minimum flow timeout (active or idle or none)
+		dumpTimeout = 0;
+		if (this.flowActiveTimeout > 0 && this.flowIdleTimeout > 0) {
+			if (this.flowActiveTimeout < this.flowIdleTimeout) {
+				dumpTimeout = this.flowActiveTimeout;
+			} else {
+				dumpTimeout = this.flowIdleTimeout;
+			}
+		} else if (this.flowActiveTimeout > 0) {
+			dumpTimeout = this.flowActiveTimeout;
+		} else if (this.flowIdleTimeout > 0) {
+			dumpTimeout = this.flowIdleTimeout;
+		}
 		// Initialize parameters
 		flows = new HashMap<String, Flow>();
-		lastDumpTimestamp = 0;
 		flowCounter = 0;
+		lastDumpTimestamp = 0;
 		// Check if output CSV file exists
 		File csvFile = new File(outDirPath + "/" + pcapDirName + ".csv");
 		if (csvFile.exists()) {
@@ -106,17 +130,26 @@ public class FlowManager {
 	 * @param packet
 	 */
 	public void addPacket(Packet packet) {
-		// Check if the flow timeout passed since the last dump
-		if (packet.getTimestamp() - lastDumpTimestamp > flowIdleTimeout) {
-			dumpTimedoutFlows(packet.getTimestamp());
+		// Check if the dump timeout passed since the last dump
+		if (packet.getTimestamp() - lastDumpTimestamp > dumpTimeout) {
+			dumpTimedOutFlows(packet.getTimestamp());
 			lastDumpTimestamp = packet.getTimestamp();
 		}
 		// Check if packet belongs to an existing flow
 		String flowId = FlowManager.generateFlowId(packet);
 		if (flows.containsKey(flowId)) {
 			Flow flow = flows.get(flowId);
-			// Check if the flow finished due to timeout
-			if (packet.getTimestamp() - flow.getLastSeen() > flowIdleTimeout) {
+			// Check if the flow finished due to active timeout
+			if (flowActiveTimeout > 0 && packet.getTimestamp() - flow.getStartTime() > flowActiveTimeout) {
+				// Dump flow information to file
+				dumpFlowToFile(flow);
+				// Remove flow from list
+				flows.remove(flowId);
+				flowCounter++;
+				// Add flow to list with first packet
+				flows.put(flowId, new Flow(packet));
+			} // Check if the flow finished due to idle timeout
+			else if (flowIdleTimeout > 0 && packet.getTimestamp() - flow.getLastSeen() > flowIdleTimeout) {
 				// Dump flow information to file
 				dumpFlowToFile(flow);
 				// Remove flow from list
@@ -160,13 +193,19 @@ public class FlowManager {
 	/**
 	 * @param timestamp
 	 */
-	private void dumpTimedoutFlows(long timestamp) {
+	private void dumpTimedOutFlows(long timestamp) {
 		// Go through every flow
 		List<String> removeFlowId = new ArrayList<String>();
 		for (String flowId : flows.keySet()) {
-			// Check if flow timed-out
 			Flow flow = flows.get(flowId);
-			if (timestamp - flow.getLastSeen() > flowIdleTimeout) {
+			// Check if flow timed-out due to active timeout
+			if (flowActiveTimeout > 0 && timestamp - flow.getStartTime() > flowActiveTimeout) {
+				// Dump flow information to file
+				dumpFlowToFile(flow);
+				flowCounter++;
+				// Add flow ID to the removing list
+				removeFlowId.add(flowId);
+			} else if (flowIdleTimeout > 0 && timestamp - flow.getLastSeen() > flowIdleTimeout) {
 				// Dump flow information to file
 				dumpFlowToFile(flow);
 				flowCounter++;

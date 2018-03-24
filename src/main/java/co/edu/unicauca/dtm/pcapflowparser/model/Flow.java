@@ -271,8 +271,8 @@ public class Flow {
 		}
 		// Add flow info: size
 		csv.append(totalSize).append(",");
-//		csv.append(lastSeen - startTime).append(",");
-//		csv.append(maxIdleTime);
+		csv.append(lastSeen - startTime).append(",");
+		csv.append(maxIdleTime);
 		return csv.toString();
 	}
 
