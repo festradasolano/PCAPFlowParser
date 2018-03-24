@@ -158,16 +158,10 @@ public class FlowManager {
 				// Add flow to list with first packet
 				flows.put(flowId, new Flow(packet));
 			} else {
-				// Update flow information: total length and maximum idle time
+				// Update flow information
+				flow.addPacketSize(packet.getSize(), nFirstPackets);
 				long packetIAT = packet.getTimestamp() - flow.getLastSeen();
-				flow.sumUpPacketSize(packet.getSize());
-				flow.checkUpdateMaxIdleTime(packetIAT);
-				// Check the number of first packets added
-				if (flow.getNFirstPacketsAdded() <= nFirstPackets) {
-					// Add packet length and inter-arrival time
-					flow.addPacketSize(packet.getSize());
-					flow.addPacketIAT(packetIAT);
-				}
+				flow.addPacketIAT(packetIAT, nFirstPackets);
 				// Update last seen
 				flow.setLastSeen(packet.getTimestamp());
 			}

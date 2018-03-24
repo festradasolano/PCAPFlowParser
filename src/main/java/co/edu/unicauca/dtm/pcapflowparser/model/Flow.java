@@ -19,6 +19,8 @@ package co.edu.unicauca.dtm.pcapflowparser.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
 /**
  * 
  * 
@@ -46,14 +48,14 @@ public class Flow {
 	private long lastSeen;
 
 	/**
-	 * Total size in bytes
+	 * Size in bytes of packets
 	 */
-	private long totalSize;
-
+	private SummaryStatistics packetSizes;
+	
 	/**
 	 * Maximum idle time
 	 */
-	private long maxIdleTime;
+	private SummaryStatistics packetIATs;
 
 	/**
 	 * Size in bytes of the first N packets
@@ -80,8 +82,9 @@ public class Flow {
 		this.firstPacket = firstPacket;
 		startTime = firstPacket.getTimestamp();
 		lastSeen = firstPacket.getTimestamp();
-		totalSize = (long) firstPacket.getSize();
-		maxIdleTime = firstPacket.getTimestamp() - lastSeen;
+		packetSizes = new SummaryStatistics();
+		packetSizes.addValue(firstPacket.getSize());
+		packetIATs = new SummaryStatistics();
 		nFirstPacketSizes = new ArrayList<Integer>();
 		nFirstPacketSizes.add(firstPacket.getSize());
 		nFirstPacketIATs = new ArrayList<Long>();
@@ -134,48 +137,52 @@ public class Flow {
 	}
 
 	/**
-	 * @return the totalSize
+	 * @return the packetSizes
 	 */
-	public long getTotalSize() {
-		return totalSize;
+	public SummaryStatistics getPacketSizes() {
+		return packetSizes;
 	}
 
 	/**
-	 * @param totalSize
-	 *            the totalSize to set
+	 * @param packetSizes the packetSizes to set
 	 */
-	public void setTotalSize(long totalSize) {
-		this.totalSize = totalSize;
+	public void setPacketSizes(SummaryStatistics packetSizes) {
+		this.packetSizes = packetSizes;
 	}
-
+	
 	/**
 	 * @param packetSize
+	 * @param nFirstPackets
 	 */
-	public void sumUpPacketSize(int packetSize) {
-		totalSize = totalSize + packetSize;
+	public void addPacketSize(int packetSize, int nFirstPackets) {
+		packetSizes.addValue(packetSize);
+		if (nFirstPacketSizes.size() <= nFirstPackets) {
+			nFirstPacketSizes.add(packetSize);
+		}
 	}
 
 	/**
-	 * @return the maxIdleTime
+	 * @return the packetIATs
 	 */
-	public long getMaxIdleTime() {
-		return maxIdleTime;
+	public SummaryStatistics getPacketIATs() {
+		return packetIATs;
 	}
 
 	/**
-	 * @param maxIdleTime
-	 *            the maxIdleTime to set
+	 * @param packetIATs the packetIATs to set
 	 */
-	public void setMaxIdleTime(long maxIdleTime) {
-		this.maxIdleTime = maxIdleTime;
+	public void setPacketIATs(SummaryStatistics packetIATs) {
+		this.packetIATs = packetIATs;
 	}
 
 	/**
 	 * @param packetIAT
+	 * @param nFirstPackets
 	 */
-	public void checkUpdateMaxIdleTime(long packetIAT) {
-		if (packetIAT > maxIdleTime) {
-			maxIdleTime = packetIAT;
+	public void addPacketIAT(long packetIAT, int nFirstPackets) {
+		packetIATs.addValue(packetIAT);
+		if (nFirstPacketIATs.size() <= nFirstPackets) {
+			nFirstPacketIATs.add(packetIAT);
 		}
 	}
 
@@ -195,13 +202,6 @@ public class Flow {
 	}
 
 	/**
-	 * @param packetSize
-	 */
-	public void addPacketSize(int packetSize) {
-		nFirstPacketSizes.add(packetSize);
-	}
-
-	/**
 	 * @return the packetIATs
 	 */
 	public List<Long> getNFirstPacketIATs() {
@@ -214,24 +214,6 @@ public class Flow {
 	 */
 	public void setNFirstPacketIATs(List<Long> nFirstPacketIATs) {
 		this.nFirstPacketIATs = nFirstPacketIATs;
-	}
-
-	/**
-	 * @param packetTimestamp
-	 */
-	public void addPacketIAT(long iat) {
-		nFirstPacketIATs.add(iat);
-	}
-
-	/**
-	 * @return
-	 */
-	public int getNFirstPacketsAdded() {
-		if (nFirstPacketSizes.size() >= nFirstPacketIATs.size()) {
-			return nFirstPacketSizes.size();
-		} else {
-			return nFirstPacketIATs.size();
-		}
 	}
 
 	/**
@@ -258,7 +240,7 @@ public class Flow {
 			if (i < nFirstPacketSizes.size()) {
 				csv.append(nFirstPacketSizes.get(i)).append(",");
 			} else {
-				csv.append(0).append(",");
+				csv.append("NaN").append(",");
 			}
 		}
 		// Add N first packet inter-arrival times
@@ -266,13 +248,17 @@ public class Flow {
 			if (i < nFirstPacketIATs.size()) {
 				csv.append(nFirstPacketIATs.get(i)).append(",");
 			} else {
-				csv.append(0).append(",");
+				csv.append("NaN").append(",");
 			}
 		}
-		// Add flow info: size
-		csv.append(totalSize).append(",");
+		// Add flow info: size, packets, duration, meanIAT, stdIAT, maxIAT, minIAT
+		csv.append(packetSizes.getSum()).append(",");
+		csv.append(packetSizes.getN()).append(",");
 		csv.append(lastSeen - startTime).append(",");
-		csv.append(maxIdleTime);
+		csv.append(packetIATs.getMean()).append(",");
+		csv.append(packetIATs.getStandardDeviation()).append(",");
+		csv.append(packetIATs.getMax()).append(",");
+		csv.append(packetIATs.getMin()).append(",");
 		return csv.toString();
 	}
 
