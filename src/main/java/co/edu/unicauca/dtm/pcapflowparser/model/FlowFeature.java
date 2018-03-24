@@ -2,7 +2,8 @@ package co.edu.unicauca.dtm.pcapflowparser.model;
 
 public enum FlowFeature {
 	
-	TIMESTAMP("timestamp"),
+	START_TIME("start_time"),
+	END_TIME("end_time"),
 	IP_SRC("ip_src"),
 	IP_DST("ip_dst"),
 	PORT_SRC("port_src"),
@@ -14,9 +15,10 @@ public enum FlowFeature {
 	VLAN_ID("vlan_id"),
 	PACKET_SIZE("size_pkt", true),
 	PACKET_IAT("iat_pkt", true),
-	SIZE("size"),
-	DURATION("duration"),
-	MAX_IDLE_TIME("max_idle_time");
+	SIZE("size")
+//	DURATION("duration"),
+//	MAX_IDLE_TIME("max_idle_time")
+	;
 	
 	/**
 	 * 

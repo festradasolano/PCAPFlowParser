@@ -240,8 +240,10 @@ public class Flow {
 	 */
 	public String toCSV(int nFirstPackets) {
 		StringBuilder csv = new StringBuilder();
-		// Add first packet info
+		// Add time info: start and end time
 		csv.append(startTime).append(",");
+		csv.append(lastSeen).append(",");
+		// Add first packet info
 		csv.append(firstPacket.getIpSrcString()).append(",");
 		csv.append(firstPacket.getIpDstString()).append(",");
 		csv.append(firstPacket.getPortSrc()).append(",");
@@ -267,10 +269,10 @@ public class Flow {
 				csv.append(0).append(",");
 			}
 		}
-		// Add flow info
+		// Add flow info: size
 		csv.append(totalSize).append(",");
-		csv.append(lastSeen - startTime).append(",");
-		csv.append(maxIdleTime);
+//		csv.append(lastSeen - startTime).append(",");
+//		csv.append(maxIdleTime);
 		return csv.toString();
 	}
 
