@@ -131,7 +131,7 @@ public class FlowManager {
 	 */
 	public void addPacket(Packet packet) {
 		// Check if the dump timeout passed since the last dump
-		if (packet.getTimestamp() - lastDumpTimestamp > dumpTimeout) {
+		if (dumpTimeout > 0 && packet.getTimestamp() - lastDumpTimestamp > dumpTimeout) {
 			dumpTimedOutFlows(packet.getTimestamp());
 			lastDumpTimestamp = packet.getTimestamp();
 		}
