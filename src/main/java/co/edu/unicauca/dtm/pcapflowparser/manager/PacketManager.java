@@ -38,12 +38,12 @@ import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
  * @author festradasolano
  */
 public class PacketManager {
-	
+
 	/**
 	 * Reader of PCAP files
 	 */
 	private Pcap pcapReader;
-	
+
 	/**
 	 * @param pcapFilePath
 	 * @return
@@ -58,7 +58,7 @@ public class PacketManager {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -98,6 +98,7 @@ public class PacketManager {
 				if (pcapPacket.hasHeader(ipv6)) {
 					packet.setIpSrc(ipv6.source());
 					packet.setIpDst(ipv6.destination());
+					packet.setIpProto(ipv6.next());
 				}
 				// TCP
 				Tcp tcp = new Tcp();
@@ -119,7 +120,7 @@ public class PacketManager {
 			} else {
 				return null;
 			}
-		}catch (Exception ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
 			return null;
 		}

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import co.edu.unicauca.dtm.pcapflowparser.model.Flow;
 import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
@@ -43,7 +44,7 @@ public class FlowManager {
 	 * 
 	 */
 	private long flowActiveTimeout;
-	
+
 	/**
 	 * 
 	 */
@@ -53,27 +54,28 @@ public class FlowManager {
 	 * 
 	 */
 	private int nFirstPackets;
-	
+
 	/**
 	 * 
 	 */
-	private HashMap<String, Flow> flows;
+	private Map<String, Flow> flows;
 
 	/**
-	 * Timeout used for cleaning the list of flows (avoid keeping flows that are no longer active)
+	 * Timeout used for cleaning the list of flows (avoid keeping flows that are no
+	 * longer active)
 	 */
 	private long dumpTimeout;
-	
+
 	/**
 	 * 
 	 */
 	private long lastDumpTimestamp;
-	
+
 	/**
 	 * 
 	 */
 	private long flowCounter;
-	
+
 	/**
 	 * 
 	 */
@@ -88,7 +90,8 @@ public class FlowManager {
 	 *            number of packets at the beginning of a flow for processing
 	 *            features
 	 */
-	public FlowManager(String pcapDirName, String outDirPath, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) throws FileNotFoundException {
+	public FlowManager(String pcapDirName, String outDirPath, int flowActiveTimeout, int flowIdleTimeout,
+			int nFirstPackets) throws FileNotFoundException {
 		super();
 		// Set input parameters
 		long secToMicrosec = 1000000;
@@ -171,7 +174,7 @@ public class FlowManager {
 			flows.put(flowId, new Flow(packet));
 		}
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -183,7 +186,7 @@ public class FlowManager {
 		}
 		return flowCounter;
 	}
-	
+
 	/**
 	 * @param timestamp
 	 */
@@ -212,7 +215,7 @@ public class FlowManager {
 			flows.remove(flowId);
 		}
 	}
-	
+
 	/**
 	 * @param flow
 	 */
@@ -226,10 +229,10 @@ public class FlowManager {
 
 	/**
 	 * Generates the identifier of the flow using the source/destination addresses
-	 * of either IPv4/Ipv6 or Ethernet, the TCP/UDP source/destination ports, the
-	 * IPv4 protocol, and the VLAN identifier. If no values of the aforementioned
-	 * fields are available, a mark is used: noAddresses, noPorts, no Protocol, and
-	 * noVLAN, respectively.
+	 * of either IP (IPv4/IPv6) or Ethernet, the IP protocol or the Ethernet type,
+	 * the TCP/UDP source/destination ports, and the VLAN identifier. These fields
+	 * were selected based on the hash function that Open vSwitch version >= 2.4
+	 * applies for bucket selection
 	 * 
 	 * @param packet
 	 *            the packet for generating the flow identifier
@@ -238,41 +241,35 @@ public class FlowManager {
 	public static String generateFlowId(Packet packet) {
 		StringBuilder flowId = new StringBuilder();
 		// Check if IPv4/IPv6 source/destination addresses exist
-		if (packet.getIpSrc() != Packet.IP_UNKNOWN && packet.getIpDst() != Packet.IP_UNKNOWN) {
+		if (packet.getIpSrc() != null && packet.getIpDst() != null) {
 			flowId.append(packet.getIpSrcString());
 			flowId.append("-");
 			flowId.append(packet.getIpDstString());
 			flowId.append("_");
+			flowId.append(packet.getIpProto());
+			flowId.append("_");
 		} // Check if Ethernet source/destination addresses exist
-		else if (packet.getEthSrc() != Packet.ETH_UNKNOWN && packet.getEthDst() != Packet.ETH_UNKNOWN) {
-			flowId.append(packet.getEthSrcHex());
+		else if (packet.getEthSrc() != null && packet.getEthDst() != null) {
+			flowId.append(packet.getEthSrcString());
 			flowId.append("-");
-			flowId.append(packet.getEthDstHex());
+			flowId.append(packet.getEthDstString());
+			flowId.append("_");
+			flowId.append(packet.getEthType());
 			flowId.append("_");
 		} else {
-			flowId.append("noAddresses_");
+			flowId.append("noAddresses");
+			flowId.append("_");
 		}
 		// Check if TCP/UDP source/destination ports exist
-		if (packet.getPortSrc() != 0 && packet.getPortDst() != 0) {
+		if (packet.getPortSrc() != -1 && packet.getPortDst() != -1) {
 			flowId.append(packet.getPortSrc());
 			flowId.append("-");
 			flowId.append(packet.getPortDst());
 			flowId.append("_");
-		} else {
-			flowId.append("noPorts_");
-		}
-		// Check if IPv4 protocol exists
-		if (packet.getIpProto() != 0) {
-			flowId.append(packet.getIpProto());
-			flowId.append("_");
-		} else {
-			flowId.append("noProtocol_");
 		}
 		// Check if VLAN ID exists
-		if (packet.getVlanId() != 0) {
+		if (packet.getVlanId() != -1) {
 			flowId.append(packet.getVlanId());
-		} else {
-			flowId.append("noVLAN");
 		}
 		return flowId.toString();
 	}

@@ -2,7 +2,8 @@ To do tasks:
 
  - Add number of previous timeouts (active or idle) and the time since previous timeout (useful when defining timeouts)
  - Write report file
- - Handle files as input and output paths 
+ - Handle files as input and output paths
+ - Add argument options to run the program 
 
 Optional:
  - Check how to recognize out-of-order and DUPACK

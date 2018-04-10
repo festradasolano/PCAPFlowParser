@@ -30,16 +30,6 @@ import org.jnetpcap.packet.format.FormatUtils;
 public class Packet {
 
 	/**
-	 * Unknown, invalid, or non-applicable Ethernet address: 00:00:00:00:00:00
-	 */
-	public static final byte[] ETH_UNKNOWN = FormatUtils.toByteArray("000000000000");
-
-	/**
-	 * Unknown, invalid, or non-applicable IPv4 address: 0.0.0.0
-	 */
-	public static final byte[] IP_UNKNOWN = FormatUtils.toByteArray("00000000");
-
-	/**
 	 * Arrival time in microseconds
 	 */
 	private long timestamp;
@@ -80,7 +70,7 @@ public class Packet {
 	private byte[] ipDst;
 
 	/**
-	 * IPv4 protocol
+	 * IP protocol number
 	 */
 	private int ipProto;
 
@@ -99,17 +89,17 @@ public class Packet {
 	 */
 	public Packet() {
 		super();
-		timestamp = 0;
-		size = 0;
-		ethSrc = Packet.ETH_UNKNOWN;
-		ethDst = Packet.ETH_UNKNOWN;
-		ethType = 0;
-		vlanId = 0;
-		ipSrc = Packet.IP_UNKNOWN;
-		ipDst = Packet.IP_UNKNOWN;
-		ipProto = 0;
-		portSrc = 0;
-		portDst = 0;
+		timestamp = -1;
+		size = -1;
+		ethSrc = null;
+		ethDst = null;
+		ethType = -1;
+		vlanId = -1;
+		ipSrc = null;
+		ipDst = null;
+		ipProto = -1;
+		portSrc = -1;
+		portDst = -1;
 	}
 
 	/**
@@ -150,9 +140,13 @@ public class Packet {
 	}
 
 	/**
-	 * @return the Ethernet source address in hexadecimal notation
+	 * @return the Ethernet source address in hexadecimal notation. 'n/a' if the
+	 *         address is NULL
 	 */
-	public String getEthSrcHex() {
+	public String getEthSrcString() {
+		if (ethSrc == null) {
+			return "n/a";
+		}
 		return FormatUtils.mac(ethSrc);
 	}
 
@@ -172,9 +166,13 @@ public class Packet {
 	}
 
 	/**
-	 * @return the Ethernet destination address in hexadecimal notation
+	 * @return the Ethernet destination address in hexadecimal notation. 'n/a' if
+	 *         the address is NULL
 	 */
-	public String getEthDstHex() {
+	public String getEthDstString() {
+		if (ethDst == null) {
+			return "n/a";
+		}
 		return FormatUtils.mac(ethDst);
 	}
 
@@ -225,9 +223,12 @@ public class Packet {
 
 	/**
 	 * @return the IPv4/IPv6 source address in dot-decimal notation for IPv4 and in
-	 *         hexadecimal notation for IPv6
+	 *         hexadecimal notation for IPv6. 'n/a' if the address is NULL
 	 */
 	public String getIpSrcString() {
+		if (ipSrc == null) {
+			return "n/a";
+		}
 		return FormatUtils.ip(ipSrc);
 	}
 
@@ -248,9 +249,12 @@ public class Packet {
 
 	/**
 	 * @return the IPv4/IPv6 destination address in dot-decimal notation for IPv4
-	 *         and in hexadecimal notation for IPv6
+	 *         and in hexadecimal notation for IPv6. 'n/a' if the address is NULL
 	 */
 	public String getIpDstString() {
+		if (ipDst == null) {
+			return "n/a";
+		}
 		return FormatUtils.ip(ipDst);
 	}
 

@@ -231,8 +231,8 @@ public class Flow {
 		csv.append(firstPacket.getPortSrc()).append(",");
 		csv.append(firstPacket.getPortDst()).append(",");
 		csv.append(firstPacket.getIpProto()).append(",");
-		csv.append(firstPacket.getEthSrcHex()).append(",");
-		csv.append(firstPacket.getEthDstHex()).append(",");
+		csv.append(firstPacket.getEthSrcString()).append(",");
+		csv.append(firstPacket.getEthDstString()).append(",");
 		csv.append(firstPacket.getEthType()).append(",");
 		csv.append(firstPacket.getVlanId()).append(",");
 		// Add N first packet sizes
