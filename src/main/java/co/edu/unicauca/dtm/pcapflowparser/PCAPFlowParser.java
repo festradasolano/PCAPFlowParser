@@ -19,6 +19,8 @@ package co.edu.unicauca.dtm.pcapflowparser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import co.edu.unicauca.dtm.pcapflowparser.manager.FlowManager;
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
@@ -35,6 +37,34 @@ import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
  */
 public class PCAPFlowParser {
 
+	private static final Map<String, Integer> options;
+	static {
+		options = new HashMap<String, Integer>();
+		options.put("--help", 0);
+		options.put("--pcap", 1);
+		options.put("--out", 2);
+		options.put("--activeTO", 3);
+		options.put("--idleTO", 4);
+		options.put("--nFirst", 5);
+	}
+
+	private static void printHelp() {
+		System.out.println("==============");
+		System.out.println("PCAPFlowParser");
+		System.out.println("==============");
+		System.out.println("Options:");
+		System.out.println("--pcap\t\tFile or directory that contains the captured packets in PCAP format.");
+		System.out.println("--out\t\tFile or directory to output the results. If file, add the extension (e.g., .csv).");
+		System.out.println(
+				"--activeTO\tTime in seconds after which an active flow is timed out anyway, even if there is still a continuous flow of packets.");
+		System.out.println(
+				"--idleTO\tTime in seconds after which an idle flow is timed out, i.e., if no packets belonging to the flow have been observed for the time specified.");
+		System.out.println(
+				"--nFirst\tNumber of first packets of a flow for generating the following features in the output file: packet size ('size_pkt') and packet IAT ('iat_pkt').");
+		System.out.println("--help\t\tDisplay this help.");
+		System.out.println("\t\t");
+	}
+
 	/**
 	 * 
 	 * 
@@ -48,61 +78,69 @@ public class PCAPFlowParser {
 		String sFlowActiveTimeout = "0";
 		String sFlowIdleTimeout = "0";
 		// Define default number of first packets to collect info
-		String sNFirstPackets = "10";
-		// Get arguments
-		switch (args.length) {
-		case 1:
-			pcapPath = args[0];
-			break;
-		case 2:
-			pcapPath = args[0];
-			outPath = args[1];
-			break;
-		case 3:
-			pcapPath = args[0];
-			outPath = args[1];
-			sFlowActiveTimeout = args[2];
-			break;
-		case 4:
-			pcapPath = args[0];
-			outPath = args[1];
-			sFlowActiveTimeout = args[2];
-			sFlowIdleTimeout = args[3];
-			break;
-		case 5:
-			pcapPath = args[0];
-			outPath = args[1];
-			sFlowActiveTimeout = args[2];
-			sFlowIdleTimeout = args[3];
-			sNFirstPackets = args[4];
-			break;
+		String sNFirstPackets = "0";
+		// Get parameters from arguments
+		for (int i = 0; i < args.length; i++) {
+			// Check that given option exists
+			int option = 0;
+			if (options.containsKey(args[i])) {
+				option = options.get(args[i]);
+				i++;
+			} else {
+				System.out.println("Option " + args[i] + " does not exist");
+				printHelp();
+				System.exit(1);
+			}
+			// Set parameter corresponding to option
+			switch (option) {
+			case 0:
+				printHelp();
+				System.exit(1);
+				break;
+			case 1:
+				pcapPath = args[i];
+				break;
+			case 2:
+				outPath = args[i];
+				break;
+			case 3:
+				sFlowActiveTimeout = args[i];
+				break;
+			case 4:
+				sFlowIdleTimeout = args[i];
+				break;
+			case 5:
+				sNFirstPackets = args[i];
+				break;
+			default:
+				System.err.println("Internal error. Option " + option + " is not implemented");
+				System.exit(1);
+				break;
+			}
 		}
-		// Check if PCAP path exists and is a directory
-		File pcapDir = new File(pcapPath);
-		if (!pcapDir.exists()) {
+		// Check if PCAP path exists
+		File pcapFile = new File(pcapPath);
+		if (!pcapFile.exists()) {
 			System.err.println("PCAP path " + pcapPath + " does not exist");
-			System.exit(-1);
-		}
-		if (!pcapDir.isDirectory()) {
-			System.err.println("PCAP path " + pcapPath + " must point to a directory that contains the PCAP files");
-			System.exit(-1);
+			System.exit(1);
 		}
 		// Check or create output directory
-		File outDir = new File(outPath);
-		if (outDir.exists()) {
-			if (!outDir.isDirectory()) {
+		File outFile = new File(outPath);
+		if (outFile.exists()) {
+			if (!outFile.isDirectory()) {
 				System.err.println("Output path " + outPath + " must point to a directory for the output file");
 				System.exit(-1);
 			}
 		} else {
-			outDir.mkdirs();
+			outFile.mkdirs();
 		}
+
 		// Parse flow active timeout to integer
 		int flowActiveTimeout;
 		try {
 			flowActiveTimeout = Integer.parseInt(sFlowActiveTimeout);
 		} catch (Exception e) {
-			flowActiveTimeout = 60;
+			flowActiveTimeout = 0;
 			System.err.println("Error parsing flow active timeout = " + sFlowActiveTimeout
 					+ " to integer. Using default flow active timeout " + flowActiveTimeout + " seconds");
 		}
@@ -111,7 +149,7 @@ public class PCAPFlowParser {
 		try {
 			flowIdleTimeout = Integer.parseInt(sFlowIdleTimeout);
 		} catch (Exception e) {
-			flowIdleTimeout = 60;
+			flowIdleTimeout = 0;
 			System.err.println("Error parsing flow idle timeout = " + sFlowIdleTimeout
 					+ " to integer. Using default flow idle timeout = " + flowIdleTimeout + " seconds");
 		}
@@ -120,13 +158,14 @@ public class PCAPFlowParser {
 		try {
 			nFirstPackets = Integer.parseInt(sNFirstPackets);
 		} catch (Exception e) {
-			nFirstPackets = 10;
+			nFirstPackets = 0;
 			System.err.println("Error parsing number of initial packets = " + sNFirstPackets
 					+ " to integer. Using default number of initial packets = " + nFirstPackets);
 		}
 		// Run PCAPFlowParser
 		PCAPFlowParser parser = new PCAPFlowParser();
-		parser.parsePCAP(pcapDir, outDir, flowActiveTimeout, flowIdleTimeout, nFirstPackets);
+		// parser.parsePCAP(pcapDir, outDir, flowActiveTimeout, flowIdleTimeout,
+		// nFirstPackets);
 	}
 
 	private void parsePCAP(File pcapDir, File outDir, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) {
