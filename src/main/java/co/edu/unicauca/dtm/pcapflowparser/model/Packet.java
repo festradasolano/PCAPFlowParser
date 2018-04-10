@@ -140,12 +140,12 @@ public class Packet {
 	}
 
 	/**
-	 * @return the Ethernet source address in hexadecimal notation. 'n/a' if the
+	 * @return the Ethernet source address in hexadecimal notation. 'NA' if the
 	 *         address is NULL
 	 */
 	public String getEthSrcString() {
 		if (ethSrc == null) {
-			return "n/a";
+			return "NA";
 		}
 		return FormatUtils.mac(ethSrc);
 	}
@@ -166,12 +166,12 @@ public class Packet {
 	}
 
 	/**
-	 * @return the Ethernet destination address in hexadecimal notation. 'n/a' if
-	 *         the address is NULL
+	 * @return the Ethernet destination address in hexadecimal notation. 'NA' if the
+	 *         address is NULL
 	 */
 	public String getEthDstString() {
 		if (ethDst == null) {
-			return "n/a";
+			return "NA";
 		}
 		return FormatUtils.mac(ethDst);
 	}
@@ -223,11 +223,11 @@ public class Packet {
 
 	/**
 	 * @return the IPv4/IPv6 source address in dot-decimal notation for IPv4 and in
-	 *         hexadecimal notation for IPv6. 'n/a' if the address is NULL
+	 *         hexadecimal notation for IPv6. 'NA' if the address is NULL
 	 */
 	public String getIpSrcString() {
 		if (ipSrc == null) {
-			return "n/a";
+			return "NA";
 		}
 		return FormatUtils.ip(ipSrc);
 	}
@@ -249,11 +249,11 @@ public class Packet {
 
 	/**
 	 * @return the IPv4/IPv6 destination address in dot-decimal notation for IPv4
-	 *         and in hexadecimal notation for IPv6. 'n/a' if the address is NULL
+	 *         and in hexadecimal notation for IPv6. 'NA' if the address is NULL
 	 */
 	public String getIpDstString() {
 		if (ipDst == null) {
-			return "n/a";
+			return "NA";
 		}
 		return FormatUtils.ip(ipDst);
 	}

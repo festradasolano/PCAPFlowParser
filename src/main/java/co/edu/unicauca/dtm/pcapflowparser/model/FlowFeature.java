@@ -4,24 +4,26 @@ public enum FlowFeature {
 	
 	START_TIME("start_time"),
 	END_TIME("end_time"),
-	IP_SRC("ip_src"),
-	IP_DST("ip_dst"),
-	PORT_SRC("port_src"),
-	PORT_DST("port_dst"),
-	IP_PROTO("ip_proto"),
 	ETH_SRC("eth_src"),
 	ETH_DST("eth_dst"),
-	ETH_TYPE("eth_type"),
 	VLAN_ID("vlan_id"),
-	PACKET_SIZE("size_pkt", true),
-	PACKET_IAT("iat_pkt", true),
+	ETH_TYPE("eth_type"),
+	IP_SRC("ip_src"),
+	IP_DST("ip_dst"),
+	IP_PROTO("ip_proto"),
+	PORT_SRC("port_src"),
+	PORT_DST("port_dst"),
 	TOTAL_SIZE("tot_size"),
 	TOTAL_PACKETS("tot_pkts"),
 	DURATION("duration"),
 	IAT_MEAN("iat_mean"),
 	IAT_STD("iat_std"),
 	IAT_MAX("iat_max"),
-	IAT_MIN("iat_min")
+	IAT_MIN("iat_min"),
+	PRIOR_TOS("prior_tos"),
+	TIME_LAST_TO("time_last_to"),
+	PACKET_SIZE("size_pkt", true),
+	PACKET_IAT("iat_pkt", true)
 	;
 	
 	/**

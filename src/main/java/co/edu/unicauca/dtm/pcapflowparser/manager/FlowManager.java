@@ -63,11 +63,13 @@ public class FlowManager {
 	/**
 	 * Timeout used for cleaning the list of flows (avoid keeping flows that are no
 	 * longer active)
+	 * 
+	 * @deprecated
 	 */
 	private long dumpTimeout;
 
 	/**
-	 * 
+	 * @deprecated
 	 */
 	private long lastDumpTimestamp;
 
@@ -98,23 +100,9 @@ public class FlowManager {
 		this.flowActiveTimeout = (long) flowActiveTimeout * secToMicrosec;
 		this.flowIdleTimeout = (long) flowIdleTimeout * secToMicrosec;
 		this.nFirstPackets = nFirstPackets;
-		// Set dump timeout with the minimum flow timeout (active or idle or none)
-		dumpTimeout = 0;
-		if (this.flowActiveTimeout > 0 && this.flowIdleTimeout > 0) {
-			if (this.flowActiveTimeout < this.flowIdleTimeout) {
-				dumpTimeout = this.flowActiveTimeout;
-			} else {
-				dumpTimeout = this.flowIdleTimeout;
-			}
-		} else if (this.flowActiveTimeout > 0) {
-			dumpTimeout = this.flowActiveTimeout;
-		} else if (this.flowIdleTimeout > 0) {
-			dumpTimeout = this.flowIdleTimeout;
-		}
 		// Initialize parameters
 		flows = new HashMap<String, Flow>();
 		flowCounter = 0;
-		lastDumpTimestamp = 0;
 		// Check if output CSV file exists
 		File csvFile = new File(outDirPath + "/" + pcapDirName + ".csv");
 		if (csvFile.exists()) {
@@ -133,33 +121,22 @@ public class FlowManager {
 	 * @param packet
 	 */
 	public void addPacket(Packet packet) {
-		// Check if the dump timeout passed since the last dump
-		if (dumpTimeout > 0 && packet.getTimestamp() - lastDumpTimestamp > dumpTimeout) {
-			dumpTimedOutFlows(packet.getTimestamp());
-			lastDumpTimestamp = packet.getTimestamp();
-		}
 		// Check if packet belongs to an existing flow
 		String flowId = FlowManager.generateFlowId(packet);
 		if (flows.containsKey(flowId)) {
 			Flow flow = flows.get(flowId);
 			// Check if the flow finished due to active timeout
 			if (flowActiveTimeout > 0 && packet.getTimestamp() - flow.getStartTime() > flowActiveTimeout) {
-				// Dump flow information to file
-				dumpFlowToFile(flow);
-				// Remove flow from list
-				flows.remove(flowId);
-				flowCounter++;
-				// Add flow to list with first packet
-				flows.put(flowId, new Flow(packet));
+				// Compute time after last timeout
+				long timeAfterLastTO = packet.getTimestamp() - flow.getStartTime() - flowActiveTimeout;
+				// Dump timeout flow
+				dumpTimeoutFlow(flowId, flow, new Flow(packet, flow.getPriorTOs() + 1, timeAfterLastTO));
 			} // Check if the flow finished due to idle timeout
 			else if (flowIdleTimeout > 0 && packet.getTimestamp() - flow.getLastSeen() > flowIdleTimeout) {
-				// Dump flow information to file
-				dumpFlowToFile(flow);
-				// Remove flow from list
-				flows.remove(flowId);
-				flowCounter++;
-				// Add flow to list with first packet
-				flows.put(flowId, new Flow(packet));
+				// Compute time after last timeout
+				long timeAfterLastTO = packet.getTimestamp() - flow.getLastSeen() - flowIdleTimeout;
+				// Dump timeout flow
+				dumpTimeoutFlow(flowId, flow, new Flow(packet, flow.getPriorTOs() + 1, timeAfterLastTO));
 			} else {
 				// Update flow information
 				flow.addPacketSize(packet.getSize(), nFirstPackets);
@@ -176,7 +153,22 @@ public class FlowManager {
 	}
 
 	/**
-	 * @return
+	 * @param flowId
+	 * @param timeoutFlow
+	 * @param newFlow
+	 */
+	private void dumpTimeoutFlow(String flowId, Flow timeoutFlow, Flow newFlow) {
+		// Dump flow information to file
+		dumpFlowToFile(timeoutFlow);
+		// Remove flow from list
+		flows.remove(flowId);
+		flowCounter++;
+		// Add flow to list with first packet
+		flows.put(flowId, newFlow);
+	}
+
+	/**
+	 * @return number of processed flows
 	 */
 	public long dumpLastFlows() {
 		for (Flow flow : flows.values()) {
@@ -188,7 +180,20 @@ public class FlowManager {
 	}
 
 	/**
+	 * @param flow
+	 */
+	private void dumpFlowToFile(Flow flow) {
+		try {
+			output.write(String.valueOf(flow.toCSV(nFirstPackets) + "\n").getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * @param timestamp
+	 * 
+	 * @deprecated
 	 */
 	private void dumpTimedOutFlows(long timestamp) {
 		// Go through every flow
@@ -213,17 +218,6 @@ public class FlowManager {
 		// Remove dumped flows from list
 		for (String flowId : removeFlowId) {
 			flows.remove(flowId);
-		}
-	}
-
-	/**
-	 * @param flow
-	 */
-	private void dumpFlowToFile(Flow flow) {
-		try {
-			output.write(String.valueOf(flow.toCSV(nFirstPackets) + "\n").getBytes());
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 

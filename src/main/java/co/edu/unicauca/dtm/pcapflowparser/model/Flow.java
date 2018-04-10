@@ -48,14 +48,24 @@ public class Flow {
 	private long lastSeen;
 
 	/**
-	 * Size in bytes of packets
+	 * Summary statistics of the size in bytes of packets
 	 */
 	private SummaryStatistics packetSizes;
-	
+
 	/**
-	 * Maximum idle time
+	 * Summary statistics of the inter-arrival time in microseconds of packets
 	 */
 	private SummaryStatistics packetIATs;
+
+	/**
+	 * Number of prior timeouts
+	 */
+	private int priorTOs;
+
+	/**
+	 * Time in microseconds after the last timeout
+	 */
+	private long timeAfterLastTO;
 
 	/**
 	 * Size in bytes of the first N packets
@@ -79,6 +89,25 @@ public class Flow {
 	 */
 	public Flow(Packet firstPacket) {
 		super();
+		initialize(firstPacket);
+	}
+
+	/**
+	 * @param firstPacket
+	 * @param priotTOs
+	 * @param timeAfterLastTO
+	 */
+	public Flow(Packet firstPacket, int priotTOs, long timeAfterLastTO) {
+		super();
+		initialize(firstPacket);
+		this.priorTOs = priotTOs;
+		this.timeAfterLastTO = timeAfterLastTO;
+	}
+
+	/**
+	 * @param firstPacket
+	 */
+	private void initialize(Packet firstPacket) {
 		this.firstPacket = firstPacket;
 		startTime = firstPacket.getTimestamp();
 		lastSeen = firstPacket.getTimestamp();
@@ -89,6 +118,8 @@ public class Flow {
 		nFirstPacketSizes.add(firstPacket.getSize());
 		nFirstPacketIATs = new ArrayList<Long>();
 		nFirstPacketIATs.add(firstPacket.getTimestamp() - lastSeen);
+		priorTOs = 0;
+		timeAfterLastTO = 0;
 	}
 
 	/**
@@ -144,19 +175,20 @@ public class Flow {
 	}
 
 	/**
-	 * @param packetSizes the packetSizes to set
+	 * @param packetSizes
+	 *            the packetSizes to set
 	 */
 	public void setPacketSizes(SummaryStatistics packetSizes) {
 		this.packetSizes = packetSizes;
 	}
-	
+
 	/**
 	 * @param packetSize
 	 * @param nFirstPackets
 	 */
 	public void addPacketSize(int packetSize, int nFirstPackets) {
 		packetSizes.addValue(packetSize);
-		if (nFirstPacketSizes.size() <= nFirstPackets) {
+		if (nFirstPacketSizes.size() < nFirstPackets) {
 			nFirstPacketSizes.add(packetSize);
 		}
 	}
@@ -169,7 +201,8 @@ public class Flow {
 	}
 
 	/**
-	 * @param packetIATs the packetIATs to set
+	 * @param packetIATs
+	 *            the packetIATs to set
 	 */
 	public void setPacketIATs(SummaryStatistics packetIATs) {
 		this.packetIATs = packetIATs;
@@ -181,9 +214,39 @@ public class Flow {
 	 */
 	public void addPacketIAT(long packetIAT, int nFirstPackets) {
 		packetIATs.addValue(packetIAT);
-		if (nFirstPacketIATs.size() <= nFirstPackets) {
+		if (nFirstPacketIATs.size() < nFirstPackets) {
 			nFirstPacketIATs.add(packetIAT);
 		}
+	}
+
+	/**
+	 * @return the priorTOs
+	 */
+	public int getPriorTOs() {
+		return priorTOs;
+	}
+
+	/**
+	 * @param priorTOs
+	 *            the priorTOs to set
+	 */
+	public void setPriorTOs(int priorTOs) {
+		this.priorTOs = priorTOs;
+	}
+
+	/**
+	 * @return the timeAfterLastTO
+	 */
+	public long getTimeAfterLastTO() {
+		return timeAfterLastTO;
+	}
+
+	/**
+	 * @param timeAfterLastTO
+	 *            the timeAfterLastTO to set
+	 */
+	public void setTimeAfterLastTO(long timeAfterLastTO) {
+		this.timeAfterLastTO = timeAfterLastTO;
 	}
 
 	/**
@@ -226,31 +289,15 @@ public class Flow {
 		csv.append(startTime).append(",");
 		csv.append(lastSeen).append(",");
 		// Add first packet info
-		csv.append(firstPacket.getIpSrcString()).append(",");
-		csv.append(firstPacket.getIpDstString()).append(",");
-		csv.append(firstPacket.getPortSrc()).append(",");
-		csv.append(firstPacket.getPortDst()).append(",");
-		csv.append(firstPacket.getIpProto()).append(",");
 		csv.append(firstPacket.getEthSrcString()).append(",");
 		csv.append(firstPacket.getEthDstString()).append(",");
-		csv.append(firstPacket.getEthType()).append(",");
 		csv.append(firstPacket.getVlanId()).append(",");
-		// Add N first packet sizes
-		for (int i = 0; i < nFirstPackets; i++) {
-			if (i < nFirstPacketSizes.size()) {
-				csv.append(nFirstPacketSizes.get(i)).append(",");
-			} else {
-				csv.append("NaN").append(",");
-			}
-		}
-		// Add N first packet inter-arrival times
-		for (int i = 0; i < nFirstPackets; i++) {
-			if (i < nFirstPacketIATs.size()) {
-				csv.append(nFirstPacketIATs.get(i)).append(",");
-			} else {
-				csv.append("NaN").append(",");
-			}
-		}
+		csv.append(firstPacket.getEthType()).append(",");
+		csv.append(firstPacket.getIpSrcString()).append(",");
+		csv.append(firstPacket.getIpDstString()).append(",");
+		csv.append(firstPacket.getIpProto()).append(",");
+		csv.append(firstPacket.getPortSrc()).append(",");
+		csv.append(firstPacket.getPortDst()).append(",");
 		// Add flow info: size, packets, duration, meanIAT, stdIAT, maxIAT, minIAT
 		csv.append(packetSizes.getSum()).append(",");
 		csv.append(packetSizes.getN()).append(",");
@@ -259,6 +306,26 @@ public class Flow {
 		csv.append(packetIATs.getStandardDeviation()).append(",");
 		csv.append(packetIATs.getMax()).append(",");
 		csv.append(packetIATs.getMin()).append(",");
+		// Add timeout info: prior timeouts and time after last timeout
+		csv.append(priorTOs).append(",");
+		csv.append(timeAfterLastTO).append(",");
+		// Add N first packet sizes
+		for (int i = 0; i < nFirstPackets; i++) {
+			if (i < nFirstPacketSizes.size()) {
+				csv.append(nFirstPacketSizes.get(i)).append(",");
+			} else {
+				csv.append(Double.NaN).append(",");
+			}
+		}
+		// Add N first packet inter-arrival times
+		for (int i = 0; i < nFirstPackets; i++) {
+			if (i < nFirstPacketIATs.size()) {
+				csv.append(nFirstPacketIATs.get(i)).append(",");
+			} else {
+				csv.append(Double.NaN).append(",");
+			}
+		}
+		csv.deleteCharAt(csv.length() - 1);
 		return csv.toString();
 	}
 
