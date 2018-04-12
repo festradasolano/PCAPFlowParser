@@ -84,16 +84,12 @@ public class FlowManager {
 	FileOutputStream output;
 
 	/**
-	 * @param flowTimeout
-	 *            flow timeout in seconds
-	 * @param activityTimeout
-	 *            activity timeout in seconds
+	 * @param outFile
+	 * @param flowActiveTimeout
+	 * @param flowIdleTimeout
 	 * @param nFirstPackets
-	 *            number of packets at the beginning of a flow for processing
-	 *            features
 	 */
-	public FlowManager(String pcapDirName, String outDirPath, int flowActiveTimeout, int flowIdleTimeout,
-			int nFirstPackets) throws FileNotFoundException {
+	public FlowManager(File outFile, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) {
 		super();
 		// Set input parameters
 		long secToMicrosec = 1000000;
@@ -103,17 +99,15 @@ public class FlowManager {
 		// Initialize parameters
 		flows = new HashMap<String, Flow>();
 		flowCounter = 0;
-		// Check if output CSV file exists
-		File csvFile = new File(outDirPath + "/" + pcapDirName + ".csv");
-		if (csvFile.exists()) {
-			csvFile.delete();
-		}
 		// Create CSV file writer
-		output = new FileOutputStream(csvFile);
 		try {
+			output = new FileOutputStream(outFile);
 			output.write(String.valueOf(FlowFeature.getCSVHeader(this.nFirstPackets) + "\n").getBytes());
+		} catch (FileNotFoundException e1) {
+			System.err.println("Internal error. File '" + outFile.getAbsolutePath() + "' does not exist");
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println(
+					"Internal error. Exception thrown when writing on the file '" + outFile.getAbsolutePath() + "'");
 		}
 	}
 
@@ -175,6 +169,11 @@ public class FlowManager {
 			// Dump flow information to file
 			dumpFlowToFile(flow);
 			flowCounter++;
+		}
+		try {
+			output.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		return flowCounter;
 	}

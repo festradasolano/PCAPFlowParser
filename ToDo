@@ -1,8 +1,4 @@
 To do tasks:
 
- - Write report file
- - Handle files as input and output paths
-
-Optional:
- - Check how to recognize out-of-order and DUPACK
- - When timing-out a TCP flow due to FYN, how probable a future TCP connection will use the same flow headers (belong to the same timed-out flow)
+ - Enable selecting the features to include/exclude in the output file
+ 
