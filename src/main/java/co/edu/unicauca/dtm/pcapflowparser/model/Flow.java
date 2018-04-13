@@ -18,6 +18,7 @@ package co.edu.unicauca.dtm.pcapflowparser.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
@@ -283,46 +284,136 @@ public class Flow {
 	 * @param nFirstPackets
 	 * @return
 	 */
-	public String toCSV(int nFirstPackets) {
+	public String toCSV(Set<Integer> features, int nFirstPackets) {
 		StringBuilder csv = new StringBuilder();
+		// Check if all features are included
+		if (features.containsAll(FlowFeature.allFeatureIds())) {
+			// Add time info: start and end time
+			csv.append(startTime).append(",");
+			csv.append(lastSeen).append(",");
+			// Add first packet info
+			csv.append(firstPacket.getEthSrcString()).append(",");
+			csv.append(firstPacket.getEthDstString()).append(",");
+			csv.append(firstPacket.getVlanId()).append(",");
+			csv.append(firstPacket.getEthType()).append(",");
+			csv.append(firstPacket.getIpSrcString()).append(",");
+			csv.append(firstPacket.getIpDstString()).append(",");
+			csv.append(firstPacket.getIpProto()).append(",");
+			csv.append(firstPacket.getPortSrc()).append(",");
+			csv.append(firstPacket.getPortDst()).append(",");
+			// Add flow info: size, packets, duration, meanIAT, stdIAT, maxIAT, minIAT
+			csv.append(packetSizes.getSum()).append(",");
+			csv.append(packetSizes.getN()).append(",");
+			csv.append(lastSeen - startTime).append(",");
+			csv.append(packetIATs.getMean()).append(",");
+			csv.append(packetIATs.getStandardDeviation()).append(",");
+			csv.append(packetIATs.getMax()).append(",");
+			csv.append(packetIATs.getMin()).append(",");
+			// Add timeout info: prior timeouts and time after last timeout
+			csv.append(priorTOs).append(",");
+			csv.append(timeAfterLastTO).append(",");
+			// Add N first packet sizes
+			for (int i = 0; i < nFirstPackets; i++) {
+				if (i < nFirstPacketSizes.size()) {
+					csv.append(nFirstPacketSizes.get(i)).append(",");
+				} else {
+					csv.append(Double.NaN).append(",");
+				}
+			}
+			// Add N first packet inter-arrival times
+			for (int i = 0; i < nFirstPackets; i++) {
+				if (i < nFirstPacketIATs.size()) {
+					csv.append(nFirstPacketIATs.get(i)).append(",");
+				} else {
+					csv.append(Double.NaN).append(",");
+				}
+			}
+			csv.deleteCharAt(csv.length() - 1);
+			return csv.toString();
+		}
+		// Check included features
 		// Add time info: start and end time
-		csv.append(startTime).append(",");
-		csv.append(lastSeen).append(",");
+		if (features.contains(FlowFeature.START_TIME.getId())) {
+			csv.append(startTime).append(",");
+		}
+		if (features.contains(FlowFeature.END_TIME.getId())) {
+			csv.append(lastSeen).append(",");
+		}
 		// Add first packet info
-		csv.append(firstPacket.getEthSrcString()).append(",");
-		csv.append(firstPacket.getEthDstString()).append(",");
-		csv.append(firstPacket.getVlanId()).append(",");
-		csv.append(firstPacket.getEthType()).append(",");
-		csv.append(firstPacket.getIpSrcString()).append(",");
-		csv.append(firstPacket.getIpDstString()).append(",");
-		csv.append(firstPacket.getIpProto()).append(",");
-		csv.append(firstPacket.getPortSrc()).append(",");
-		csv.append(firstPacket.getPortDst()).append(",");
+		if (features.contains(FlowFeature.ETH_SRC.getId())) {
+			csv.append(firstPacket.getEthSrcString()).append(",");
+		}
+		if (features.contains(FlowFeature.ETH_DST.getId())) {
+			csv.append(firstPacket.getEthDstString()).append(",");
+		}
+		if (features.contains(FlowFeature.VLAN_ID.getId())) {
+			csv.append(firstPacket.getVlanId()).append(",");
+		}
+		if (features.contains(FlowFeature.ETH_TYPE.getId())) {
+			csv.append(firstPacket.getEthType()).append(",");
+		}
+		if (features.contains(FlowFeature.IP_SRC.getId())) {
+			csv.append(firstPacket.getIpSrcString()).append(",");
+		}
+		if (features.contains(FlowFeature.IP_DST.getId())) {
+			csv.append(firstPacket.getIpDstString()).append(",");
+		}
+		if (features.contains(FlowFeature.IP_PROTO.getId())) {
+			csv.append(firstPacket.getIpProto()).append(",");
+		}
+		if (features.contains(FlowFeature.PORT_SRC.getId())) {
+			csv.append(firstPacket.getPortSrc()).append(",");
+		}
+		if (features.contains(FlowFeature.PORT_DST.getId())) {
+			csv.append(firstPacket.getPortDst()).append(",");
+		}
 		// Add flow info: size, packets, duration, meanIAT, stdIAT, maxIAT, minIAT
-		csv.append(packetSizes.getSum()).append(",");
-		csv.append(packetSizes.getN()).append(",");
-		csv.append(lastSeen - startTime).append(",");
-		csv.append(packetIATs.getMean()).append(",");
-		csv.append(packetIATs.getStandardDeviation()).append(",");
-		csv.append(packetIATs.getMax()).append(",");
-		csv.append(packetIATs.getMin()).append(",");
+		if (features.contains(FlowFeature.TOTAL_SIZE.getId())) {
+			csv.append(packetSizes.getSum()).append(",");
+		}
+		if (features.contains(FlowFeature.TOTAL_PACKETS.getId())) {
+			csv.append(packetSizes.getN()).append(",");
+		}
+		if (features.contains(FlowFeature.DURATION.getId())) {
+			csv.append(lastSeen - startTime).append(",");
+		}
+		if (features.contains(FlowFeature.IAT_MEAN.getId())) {
+			csv.append(packetIATs.getMean()).append(",");
+		}
+		if (features.contains(FlowFeature.IAT_STD.getId())) {
+			csv.append(packetIATs.getStandardDeviation()).append(",");
+		}
+		if (features.contains(FlowFeature.IAT_MAX.getId())) {
+			csv.append(packetIATs.getMax()).append(",");
+		}
+		if (features.contains(FlowFeature.IAT_MIN.getId())) {
+			csv.append(packetIATs.getMin()).append(",");
+		}
 		// Add timeout info: prior timeouts and time after last timeout
-		csv.append(priorTOs).append(",");
-		csv.append(timeAfterLastTO).append(",");
+		if (features.contains(FlowFeature.PRIOR_TOS.getId())) {
+			csv.append(priorTOs).append(",");
+		}
+		if (features.contains(FlowFeature.TIME_LAST_TO.getId())) {
+			csv.append(timeAfterLastTO).append(",");
+		}
 		// Add N first packet sizes
-		for (int i = 0; i < nFirstPackets; i++) {
-			if (i < nFirstPacketSizes.size()) {
-				csv.append(nFirstPacketSizes.get(i)).append(",");
-			} else {
-				csv.append(Double.NaN).append(",");
+		if (features.contains(FlowFeature.PACKET_SIZE.getId())) {
+			for (int i = 0; i < nFirstPackets; i++) {
+				if (i < nFirstPacketSizes.size()) {
+					csv.append(nFirstPacketSizes.get(i)).append(",");
+				} else {
+					csv.append(Double.NaN).append(",");
+				}
 			}
 		}
 		// Add N first packet inter-arrival times
-		for (int i = 0; i < nFirstPackets; i++) {
-			if (i < nFirstPacketIATs.size()) {
-				csv.append(nFirstPacketIATs.get(i)).append(",");
-			} else {
-				csv.append(Double.NaN).append(",");
+		if (features.contains(FlowFeature.PACKET_IAT.getId())) {
+			for (int i = 0; i < nFirstPackets; i++) {
+				if (i < nFirstPacketIATs.size()) {
+					csv.append(nFirstPacketIATs.get(i)).append(",");
+				} else {
+					csv.append(Double.NaN).append(",");
+				}
 			}
 		}
 		csv.deleteCharAt(csv.length() - 1);

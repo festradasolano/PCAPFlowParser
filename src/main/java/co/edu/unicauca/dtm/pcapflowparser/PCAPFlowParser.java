@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import co.edu.unicauca.dtm.pcapflowparser.manager.FlowManager;
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
+import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
 import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
 
 /**
@@ -39,6 +41,9 @@ import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
  */
 public class PCAPFlowParser {
 
+	/**
+	 * 
+	 */
 	private static final Map<String, Integer> options;
 	static {
 		options = new HashMap<String, Integer>();
@@ -48,7 +53,19 @@ public class PCAPFlowParser {
 		options.put("--activeTO", 3);
 		options.put("--idleTO", 4);
 		options.put("--nFirst", 5);
+		options.put("--include", 6);
+		options.put("--exclude", 7);
 	}
+
+	/**
+	 * 
+	 */
+	private static final String FEATURE_ALL = "all";
+
+	/**
+	 * 
+	 */
+	private static final String FEATURE_NONE = "none";
 
 	/**
 	 * 
@@ -64,6 +81,9 @@ public class PCAPFlowParser {
 		String sFlowIdleTimeout = "0";
 		// Define default number of first packets to collect info
 		String sNFirstPackets = "0";
+		// Define default features to include and exclude
+		String featureInclude = FEATURE_ALL;
+		String featureExclude = FEATURE_NONE;
 		// Get parameters from arguments
 		for (int i = 0; i < args.length; i++) {
 			// Check that given option exists
@@ -97,10 +117,52 @@ public class PCAPFlowParser {
 			case 5:
 				sNFirstPackets = args[i];
 				break;
+			case 6:
+				featureInclude = args[i];
+				if (featureInclude.equalsIgnoreCase(FEATURE_NONE)) {
+					System.out.println("Value 'none' is not applicable to the option '--include'");
+					printHelp();
+					System.exit(1);
+				}
+				break;
+			case 7:
+				featureExclude = args[i];
+				if (featureExclude.equalsIgnoreCase(FEATURE_ALL)) {
+					System.out.println("Value 'all' is not applicable to the option '--exclude'");
+					printHelp();
+					System.exit(1);
+				}
+				break;
 			default:
 				System.err.println("Internal error. Option " + option + " is not implemented");
 				System.exit(1);
 				break;
+			}
+		}
+		// Get features to include
+		Set<Integer> features = null;
+		if (featureInclude.equalsIgnoreCase(FEATURE_ALL)) {
+			features = FlowFeature.allFeatureIds();
+		} else {
+			features = FlowFeature.featureIdByName(featureInclude);
+			if (features == null) {
+				System.out.println("A problem occurred while trying to get one of the included features in '"
+						+ featureInclude + "'");
+				printHelp();
+				System.exit(1);
+			}
+		}
+		// Get the features to exclude
+		if (!featureExclude.equalsIgnoreCase(FEATURE_NONE)) {
+			Set<Integer> excludeIds = FlowFeature.featureIdByName(featureExclude);
+			if (excludeIds == null) {
+				System.out.println("A problem occurred while trying to get one of the excluded features in '"
+						+ featureExclude + "'");
+				printHelp();
+				System.exit(1);
+			}
+			for (int excludeId : excludeIds) {
+				features.remove(excludeId);
 			}
 		}
 		// Check if PCAP path exists
@@ -186,58 +248,11 @@ public class PCAPFlowParser {
 					+ " to integer. Using default number of initial packets = " + nFirstPackets);
 		}
 		System.out.println("");
-		// Run PCAPFlowParser
-		PCAPFlowParser parser = new PCAPFlowParser();
-		parser.parsePCAP(pcapFile, outFile, flowActiveTimeout, flowIdleTimeout, nFirstPackets);
-	}
-
-	/**
-	 * Prints help
-	 */
-	private static void printHelp() {
-		System.out.println("==============");
-		System.out.println("PCAPFlowParser");
-		System.out.println("==============");
-		System.out.println("Options:");
-		System.out.println("--pcap\t\tFile or folder that contains the captured packets in PCAP format.");
-		System.out.println("--out\t\tFile or folder to output the results. If file, add the extension (e.g., .csv).");
-		System.out.println(
-				"--activeTO\tTime in seconds after which an active flow is timed out anyway, even if there is still a continuous flow of packets.");
-		System.out.println(
-				"--idleTO\tTime in seconds after which an idle flow is timed out, i.e., if no packets belonging to the flow have been observed for the time specified.");
-		System.out.println(
-				"--nFirst\tNumber of first packets of a flow for generating the following features in the output file: packet size ('size_pkt') and packet IAT ('iat_pkt').");
-		System.out.println("--help\t\tDisplay this help.");
-		System.out.println("\t\t");
-	}
-
-	/**
-	 * Creates a file. Exits if the program throws an error while creating the file
-	 * 
-	 * @param file
-	 *            to create
-	 */
-	private static void createFile(File file) {
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			System.err.println("Error creating file " + file.getAbsolutePath());
-			System.exit(1);
-		}
-	}
-
-	/**
-	 * @param pcapFile
-	 * @param outFile
-	 * @param flowActiveTimeout
-	 * @param flowIdleTimeout
-	 * @param nFirstPackets
-	 */
-	private void parsePCAP(File pcapFile, File outFile, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) {
+		// ---------------------
+		// Start parsing process
 		long start = System.currentTimeMillis();
 		// Flow manager
-		FlowManager flowManager = new FlowManager(outFile, flowActiveTimeout, flowIdleTimeout, nFirstPackets);
-		;
+		FlowManager flowManager = new FlowManager(outFile, flowActiveTimeout, flowIdleTimeout, features, nFirstPackets);
 		// Report parameters
 		int nValidFiles = 0;
 		int nErrorFiles = 0;
@@ -302,9 +317,6 @@ public class PCAPFlowParser {
 		report.append(" - Error = ").append(nErrorPackets).append("\n");
 		report.append("Flows").append("\n");
 		report.append(" - Total = ").append(nFlows).append("\n");
-		// Print report in console
-		System.out.println("");
-		System.out.println(report.toString());
 		// Write report file
 		String reportPath = outFile.getParent() + File.separator;
 		if (outFile.getName().lastIndexOf(".") > 0) {
@@ -328,7 +340,74 @@ public class PCAPFlowParser {
 			System.err.println(
 					"Internal error. Exception thrown when writing on the file '" + reportFile.getAbsolutePath() + "'");
 		}
-		
+		// Print report in console
+		System.out.println("");
+		System.out.println(report.toString());
+	}
+
+	/**
+	 * Prints help
+	 */
+	private static void printHelp() {
+		System.out.println("");
+		System.out.println("==============");
+		System.out.println("PCAPFlowParser");
+		System.out.println("==============");
+		System.out.println("Options:");
+		System.out.println("  --help\tDisplay this help");
+		System.out.println("  --pcap\tFile or folder that contains the captured packets in PCAP format");
+		System.out.println("  --out\t\tFile or folder to output the results. If file, add the extension (e.g., .csv)");
+		System.out.println(
+				"  --activeTO\tTime in seconds after which an active flow is timed out anyway, even if there is still a continuous flow of packets");
+		System.out.println(
+				"  --idleTO\tTime in seconds after which an idle flow is timed out, i.e., if no packets belonging to the flow have been observed for the time specified");
+		System.out.println(
+				"  --nFirst\tNumber of first packets of a flow for generating the following features in the output results: packet size ('size_pkt') and packet IAT ('iat_pkt')");
+		System.out.println(
+				"  --include\tList of features to include in the output results separated by commas (see values below). Value 'none' is not applicable to this option");
+		System.out.println(
+				"  --exclude\tList of features to exclude in the output results separated by commas (see values below). Value 'all' is not applicable to this option");
+		System.out.println("");
+		System.out.println("Feature values for the options --include and --exclude:");
+		System.out.println("  all\t\tAll available features. Can not be combined with other feature values");
+		System.out.println("  none\t\tNone feature. Can not be combined with other feature values");
+		System.out.println("  start_time\tFlow start time");
+		System.out.println("  end_time\tFlow end time");
+		System.out.println("  eth_src\tEthernet source address");
+		System.out.println("  eth_dst\tEthernet destination address");
+		System.out.println("  vlan_id\tVLAN identifier");
+		System.out.println("  eth_type\tEthernet type");
+		System.out.println("  ip_src\tIPv4/IPv6 source address");
+		System.out.println("  ip_dst\tIPv4/IPv6 destination address");
+		System.out.println("  ip_proto\tIP protocol number");
+		System.out.println("  port_src\tTCP/UDP source port");
+		System.out.println("  port_dst\tTCP/UDP destination port");
+		System.out.println("  tot_size\tFlow total size (in bytes)");
+		System.out.println("  tot_pkts\tFlow total number of packets");
+		System.out.println("  duration\tFlow duration (in microseconds)");
+		System.out.println("  iat_mean\tMean of flow inter-arrival time (in microseconds)");
+		System.out.println("  iat_std\tStandard deviation of flow inter-arrival time (in microseconds)");
+		System.out.println("  iat_max\tMaximum of flow inter-arrival time (in microseconds)");
+		System.out.println("  iat_min\tMinimum of flow inter-arrival time (in microseconds)");
+		System.out.println("  prior_tos\tNumber of previous timeouts");
+		System.out.println("  time_last_to\tTime after the last timeout");
+		System.out.println("  size_pkt\tPacket size of the --nFirst packets");
+		System.out.println("  iat_pkt\tPacket inter-arrival time of the --nFirst packets");
+	}
+
+	/**
+	 * Creates a file. Exits if the program throws an error while creating the file
+	 * 
+	 * @param file
+	 *            to create
+	 */
+	private static void createFile(File file) {
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			System.err.println("Error creating file " + file.getAbsolutePath());
+			System.exit(1);
+		}
 	}
 
 }

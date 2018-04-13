@@ -20,10 +20,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import co.edu.unicauca.dtm.pcapflowparser.model.Flow;
 import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
@@ -53,25 +52,17 @@ public class FlowManager {
 	/**
 	 * 
 	 */
+	private Set<Integer> features;
+
+	/**
+	 * 
+	 */
 	private int nFirstPackets;
 
 	/**
 	 * 
 	 */
 	private Map<String, Flow> flows;
-
-	/**
-	 * Timeout used for cleaning the list of flows (avoid keeping flows that are no
-	 * longer active)
-	 * 
-	 * @deprecated
-	 */
-	private long dumpTimeout;
-
-	/**
-	 * @deprecated
-	 */
-	private long lastDumpTimestamp;
 
 	/**
 	 * 
@@ -89,12 +80,14 @@ public class FlowManager {
 	 * @param flowIdleTimeout
 	 * @param nFirstPackets
 	 */
-	public FlowManager(File outFile, int flowActiveTimeout, int flowIdleTimeout, int nFirstPackets) {
+	public FlowManager(File outFile, int flowActiveTimeout, int flowIdleTimeout, Set<Integer> features,
+			int nFirstPackets) {
 		super();
 		// Set input parameters
 		long secToMicrosec = 1000000;
 		this.flowActiveTimeout = (long) flowActiveTimeout * secToMicrosec;
 		this.flowIdleTimeout = (long) flowIdleTimeout * secToMicrosec;
+		this.features = features;
 		this.nFirstPackets = nFirstPackets;
 		// Initialize parameters
 		flows = new HashMap<String, Flow>();
@@ -102,7 +95,7 @@ public class FlowManager {
 		// Create CSV file writer
 		try {
 			output = new FileOutputStream(outFile);
-			output.write(String.valueOf(FlowFeature.getCSVHeader(this.nFirstPackets) + "\n").getBytes());
+			output.write(String.valueOf(FlowFeature.csvHeader(this.features, this.nFirstPackets) + "\n").getBytes());
 		} catch (FileNotFoundException e1) {
 			System.err.println("Internal error. File '" + outFile.getAbsolutePath() + "' does not exist");
 		} catch (IOException e) {
@@ -183,40 +176,9 @@ public class FlowManager {
 	 */
 	private void dumpFlowToFile(Flow flow) {
 		try {
-			output.write(String.valueOf(flow.toCSV(nFirstPackets) + "\n").getBytes());
+			output.write(String.valueOf(flow.toCSV(features, nFirstPackets) + "\n").getBytes());
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * @param timestamp
-	 * 
-	 * @deprecated
-	 */
-	private void dumpTimedOutFlows(long timestamp) {
-		// Go through every flow
-		List<String> removeFlowId = new ArrayList<String>();
-		for (String flowId : flows.keySet()) {
-			Flow flow = flows.get(flowId);
-			// Check if flow timed-out due to active timeout
-			if (flowActiveTimeout > 0 && timestamp - flow.getStartTime() > flowActiveTimeout) {
-				// Dump flow information to file
-				dumpFlowToFile(flow);
-				flowCounter++;
-				// Add flow ID to the removing list
-				removeFlowId.add(flowId);
-			} else if (flowIdleTimeout > 0 && timestamp - flow.getLastSeen() > flowIdleTimeout) {
-				// Dump flow information to file
-				dumpFlowToFile(flow);
-				flowCounter++;
-				// Add flow ID to the removing list
-				removeFlowId.add(flowId);
-			}
-		}
-		// Remove dumped flows from list
-		for (String flowId : removeFlowId) {
-			flows.remove(flowId);
 		}
 	}
 
