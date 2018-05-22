@@ -29,6 +29,7 @@ import co.edu.unicauca.dtm.pcapflowparser.manager.FlowManager;
 import co.edu.unicauca.dtm.pcapflowparser.manager.PacketManager;
 import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
 import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
+import co.edu.unicauca.dtm.pcapflowparser.util.Utils;
 
 /**
  * 
@@ -55,6 +56,7 @@ public class PCAPFlowParser {
 		options.put("--nFirst", 5);
 		options.put("--include", 6);
 		options.put("--exclude", 7);
+		options.put("--iatReport", 8);
 	}
 
 	/**
@@ -84,6 +86,8 @@ public class PCAPFlowParser {
 		// Define default features to include and exclude
 		String featureInclude = FEATURE_ALL;
 		String featureExclude = FEATURE_NONE;
+		// By default, do not generate the report of packet IATs
+		boolean iatReport = false;
 		// Get parameters from arguments
 		for (int i = 0; i < args.length; i++) {
 			// Check that given option exists
@@ -133,6 +137,10 @@ public class PCAPFlowParser {
 					System.exit(1);
 				}
 				break;
+			case 8:
+				iatReport = true;
+				i--;
+				break;
 			default:
 				System.err.println("Internal error. Option " + option + " is not implemented");
 				System.exit(1);
@@ -169,14 +177,8 @@ public class PCAPFlowParser {
 		File pcapFile = new File(pcapPath);
 		String pcapName = "";
 		if (pcapFile.exists()) {
-			// Get PCAP file/folder name; remove extension if exists
-			if (pcapFile.getName().lastIndexOf(".") > 0) {
-				pcapName = pcapFile.getName().substring(0, pcapFile.getName().lastIndexOf("."));
-			} else {
-				pcapName = pcapFile.getName();
-			}
-			// Add CSV extension to PCAP name
-			pcapName = pcapName + ".csv";
+			// Get PCAP file/folder name with CSV extension
+			pcapName = Utils.getFileName(pcapFile, ".csv");
 		} else {
 			System.out.println("PCAP path '" + pcapPath + "' does not exist");
 			System.exit(1);
@@ -247,12 +249,25 @@ public class PCAPFlowParser {
 			System.out.println("Error parsing number of initial packets = " + sNFirstPackets
 					+ " to integer. Using default number of initial packets = " + nFirstPackets);
 		}
+		// Check if report of packet IATs must be generated
+		File iatFile = null;
+		if (iatReport) {
+			String iatPath = Utils.getFilePath(outFile, "_packetIAT.csv");
+			iatFile = new File(iatPath);
+			System.out.println("Creating packet IAT report file '" + iatFile.getName() + "' in the output folder path");
+			if (iatFile.exists()) {
+				System.out.println("Overriding existing packet IAT report file '" + iatFile.getName() + "'");
+				iatFile.delete();
+			}
+			createFile(iatFile);
+		}
 		System.out.println("");
 		// ---------------------
 		// Start parsing process
 		long start = System.currentTimeMillis();
 		// Flow manager
-		FlowManager flowManager = new FlowManager(outFile, flowActiveTimeout, flowIdleTimeout, features, nFirstPackets);
+		FlowManager flowManager = new FlowManager(outFile, flowActiveTimeout, flowIdleTimeout, features, nFirstPackets,
+				iatFile);
 		// Report parameters
 		int nValidFiles = 0;
 		int nErrorFiles = 0;
@@ -271,7 +286,7 @@ public class PCAPFlowParser {
 		}
 		int nFiles = pcapFiles.length;
 		for (File pcap : pcapFiles) {
-			System.out.println("Parsing file: " + pcap.getName() + " ...");
+			System.out.println("Parsing file: '" + pcap.getName() + "' ...");
 			// Read and check PCAP file
 			PacketManager packetMgr = new PacketManager();
 			if (!packetMgr.config(pcap.getAbsolutePath())) {
@@ -287,7 +302,7 @@ public class PCAPFlowParser {
 					} else {
 						// Check end of file
 						if (packet.getTimestamp() == -1) {
-							System.out.println("\t... end of file: " + pcap.getName());
+							System.out.println("\t... end of file: '" + pcap.getName() + "'");
 							break;
 						}
 						nValidPackets++;
@@ -300,6 +315,8 @@ public class PCAPFlowParser {
 		}
 		// Dump last flows
 		long nFlows = flowManager.dumpLastFlows();
+		System.out.println("");
+		// ---------------------
 		// Generate report statistics
 		long end = System.currentTimeMillis();
 		StringBuilder report = new StringBuilder();
@@ -318,18 +335,12 @@ public class PCAPFlowParser {
 		report.append("Flows").append("\n");
 		report.append(" - Total = ").append(nFlows).append("\n");
 		// Write report file
-		String reportPath = outFile.getParent() + File.separator;
-		if (outFile.getName().lastIndexOf(".") > 0) {
-			reportPath += outFile.getName().substring(0, outFile.getName().lastIndexOf("."));
-		} else {
-			reportPath += outFile.getName();
-		}
-		reportPath += "_report.txt";
+		String reportPath = Utils.getFilePath(outFile, "_report.txt");
 		File reportFile = new File(reportPath);
 		if (reportFile.exists()) {
 			reportFile.delete();
 		}
-		System.out.println("Writing report to " + reportFile.getAbsolutePath());
+		System.out.println("Writing report to '" + reportFile.getAbsolutePath() + "'");
 		try {
 			FileOutputStream output = new FileOutputStream(reportFile);
 			output.write(report.toString().getBytes());
@@ -341,7 +352,6 @@ public class PCAPFlowParser {
 					"Internal error. Exception thrown when writing on the file '" + reportFile.getAbsolutePath() + "'");
 		}
 		// Print report in console
-		System.out.println("");
 		System.out.println(report.toString());
 	}
 
@@ -367,6 +377,7 @@ public class PCAPFlowParser {
 				"  --include\tList of features to include in the output results separated by commas (see values below). Value 'none' is not applicable to this option");
 		System.out.println(
 				"  --exclude\tList of features to exclude in the output results separated by commas (see values below). Value 'all' is not applicable to this option");
+		System.out.println("  --iatReport\tGenerate a CSV file that reports the values of packet IATs of flows");
 		System.out.println("");
 		System.out.println("Feature values for the options --include and --exclude:");
 		System.out.println("  all\t\tAll available features. Can not be combined with other feature values");
