@@ -27,6 +27,7 @@ import java.util.Set;
 import co.edu.unicauca.dtm.pcapflowparser.model.Flow;
 import co.edu.unicauca.dtm.pcapflowparser.model.FlowFeature;
 import co.edu.unicauca.dtm.pcapflowparser.model.Packet;
+import co.edu.unicauca.dtm.pcapflowparser.model.PacketIATFeature;
 
 /**
  * 
@@ -75,13 +76,18 @@ public class FlowManager {
 	FileOutputStream output;
 
 	/**
+	 * 
+	 */
+	FileOutputStream iatOutput;
+
+	/**
 	 * @param outFile
 	 * @param flowActiveTimeout
 	 * @param flowIdleTimeout
 	 * @param nFirstPackets
 	 */
 	public FlowManager(File outFile, int flowActiveTimeout, int flowIdleTimeout, Set<Integer> features,
-			int nFirstPackets) {
+			int nFirstPackets, File iatFile) {
 		super();
 		// Set input parameters
 		long secToMicrosec = 1000000;
@@ -96,6 +102,10 @@ public class FlowManager {
 		try {
 			output = new FileOutputStream(outFile);
 			output.write(String.valueOf(FlowFeature.csvHeader(this.features, this.nFirstPackets) + "\n").getBytes());
+			if (iatFile != null) {
+				iatOutput = new FileOutputStream(iatFile);
+				iatOutput.write(String.valueOf(PacketIATFeature.csvHeader() + "\n").getBytes());
+			}
 		} catch (FileNotFoundException e1) {
 			System.err.println("Internal error. File '" + outFile.getAbsolutePath() + "' does not exist");
 		} catch (IOException e) {
@@ -131,6 +141,20 @@ public class FlowManager {
 				flow.addPacketIAT(packetIAT, nFirstPackets);
 				// Update last seen
 				flow.setLastSeen(packet.getTimestamp());
+				// Check if writing packet IAT report
+				if (iatOutput != null) {
+					// Build packet IAT information
+					StringBuilder iatInfo = new StringBuilder();
+					iatInfo.append(flowId).append(",");
+					iatInfo.append(flow.getPacketSizes().getN()).append(",");
+					iatInfo.append(packetIAT).append("\n");
+					// Write packet IAT report to file
+					try {
+						iatOutput.write(iatInfo.toString().getBytes());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 		} // First packet of a flow
 		else {
@@ -158,13 +182,17 @@ public class FlowManager {
 	 * @return number of processed flows
 	 */
 	public long dumpLastFlows() {
+		// Dump remaining flows to file
 		for (Flow flow : flows.values()) {
-			// Dump flow information to file
 			dumpFlowToFile(flow);
 			flowCounter++;
 		}
+		// Close file outputs
 		try {
 			output.close();
+			if (iatOutput != null) {
+				iatOutput.close();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
