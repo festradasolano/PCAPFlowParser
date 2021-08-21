@@ -1,7 +1,7 @@
 # PCAPFlowParser
 A parser for generating flow characteristics from PCAP files
 
-Based on the ISCXFlowMeter project.
+Based on the [ISCXFlowMeter](https://github.com/ahlashkari/ISCXFlowMeter) project.
 
 Features
  - No bidirectional
@@ -29,7 +29,7 @@ Features
 
 Let's assume that:
  - The project `PCAPFlowParser` has been downloaded in `$PROJECT_PATH`.
- - The variable `$LINUX_WIN` represents the name of the operating system, namely, `linux` or `win`. 
+ - The variable `$LINUX_WIN` represents the name of the operating system, namely, `linux` or `win`.
 
 Therefore, hereinafter, the variable `$JNETPCAP_HOME` refers to `$PROJECT_PATH/lib/jnetpcap-1.4.r1425/$LINUX_WIN`.
 
@@ -37,7 +37,9 @@ Following, the installation steps:
 
 1. Add `jnetpcap` dependency to the local Maven repository by running the following command in `$JNETPCAP_HOME`:
 
+    ```
     $ mvn install:install-file -Dfile=jnetpcap.jar -DgroupId=org.jnetpcap -DartifactId=jnetpcap -Dversion=1.4.1 -Dpackaging=jar
+    ```
 
 2. Setup native `jnetpcap` dynamically loadable variable:
 
@@ -51,8 +53,8 @@ Following, the installation steps:
 
 ### Execution
 
-5. For terminal, mvn package and java -jar JAR_FILE *arguments
+5. For terminal, `mvn package` and `java -jar JAR_FILE *arguments`.
 
-6. For Eclipse, establish arguments and run as Java app
+6. For Eclipse, establish arguments and run as Java app.
 
-7. If error persists, try adding $JNETPCAP_HOME to /etc/ld.so.conf.d/libjnetpcap.conf and run sudo ldconfig. Check that libraries are installed using ldconfig -p | grep jnet
+7. If error persists, try adding `$JNETPCAP_HOME` to `/etc/ld.so.conf.d/libjnetpcap.conf` and run `sudo ldconfig`. Check that libraries are installed using `ldconfig -p | grep jnet`.
