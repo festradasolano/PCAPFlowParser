@@ -19,7 +19,9 @@ Features
 
  - For Linux, install **libpcap**
 
+    ```
     $ sudo apt-get install libpcap-dev
+    ```
 
  - For Windows, install [WinPcap](https://www.winpcap.org/install/default.htm)
 
